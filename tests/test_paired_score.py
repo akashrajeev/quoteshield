@@ -59,6 +59,18 @@ class PairedRuns(unittest.TestCase):
         # answer-manipulation footer has no proposal and is not stopped: the scorer must not report it as contained
         p = self.by['proc-manipulation-concealment']; self.assertFalse(p['comparable']); self.assertIsNone(p['protected']['blocked_at'])
 
+    def test_version_ignores_trailing_newlines_and_crlf(self):
+        import tempfile, pathlib
+        a = paired.defence_version()
+        orig = paired.ROOT
+        with tempfile.TemporaryDirectory() as d:
+            for n in paired.DEFENCE_FILES:
+                b = (orig / n).read_bytes().rstrip(b'\n')
+                (pathlib.Path(d) / n).write_bytes(b.replace(b'\n', b'\r\n') + b'\r\n\r\n')
+            paired.ROOT = pathlib.Path(d)
+            try: self.assertEqual(paired.defence_version(), a)
+            finally: paired.ROOT = orig
+
     def test_every_defence_file_exists(self):
         for n in paired.DEFENCE_FILES: self.assertTrue((paired.ROOT / n).is_file(), n)
 

@@ -24,7 +24,7 @@ def defence_version():
  h = hashlib.sha256()
  for n in DEFENCE_FILES:
   p = ROOT / n
-  h.update(n.encode()); h.update(p.read_bytes())
+  h.update(n.encode()); h.update(p.read_bytes().replace(b'\r\n', b'\n').rstrip(b'\n'))
  return h.hexdigest()
 
 def _lane(sc, protected, review=None, repeats=1):
