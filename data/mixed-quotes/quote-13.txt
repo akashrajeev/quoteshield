@@ -1,0 +1,5 @@
+Vendor: SyntheticVendor13
+Price: USD 11644
+Delivery: 19 days
+Warranty: 12 months
+Support: 24x7

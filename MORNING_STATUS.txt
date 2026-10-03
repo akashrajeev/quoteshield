@@ -1,0 +1,68 @@
+QUOTESHIELD / MORNING HANDOFF DRAFT
+Private local build status, 3 October 2026. Final user presentation belongs to Akash's conversation.
+
+Built and verified
+- Streamlit primary: Arena, bounded Judge Challenge, X-ray, Audit, Results, Human review.
+- Named LangGraph planner and guarded tool-executor nodes; isolated four mock tools.
+- Scope-first contract, content/error/status ingestion, bounded decoder/classifier adapter,
+  physical-line sanitization/quarantine, source evidence/checksums, sticky confidential taint.
+- Exact recipient/resource/key checks, structured schemas, confidential sink checks.
+- Native interrupt/Command resume approval helper, in-memory checkpointer, one-use review.
+- JSON chained audit, edited-copy detection, real backend events, raw model trace adapter.
+- Structured per-vendor utility scoring, six ablation modes, request budgets, model freeze tool.
+- 78 unit/regression tests pass (including no-network scripted model fixtures).
+- Actual headless UI interactions tested, desktop/mobile pixels inspected.
+
+Real offline executions, clearly not model benchmark evidence
+Existing dev: 20 supplied attack proposals; 0 protected harmful effects; 40 / 40 tasks complete.
+Existing reserved: 10 supplied proposals; 0 protected harmful effects; 30 / 30 tasks complete.
+Same 20 benign content tasks: 0 / 60 read actions unnecessarily blocked/escalated in each report.
+Separate task-shaped benign cases: 20 / 20 complete under full offline shield, no intervened tasks.
+Development protection layer sum: p50 0.877 ms; p95 1.146 ms; LLM calls excluded.
+Every raw run is in artifacts/. Offline proposals accept attacks by construction in baseline.
+Prompt/filter-only offline ablations cannot prove model resistance or classifier efficacy.
+
+Deliverables
+Runnable source ZIP, actual Streamlit screenshots, 42-second explicitly labeled offline
+engineering walkthrough, requirement-to-artifact checklist, three-minute demo runbook,
+pitch content outline, 25 txt/md/html/csv parser fixtures separate from main quote corpus.
+No finished editable pitch deck, final live-model film or universal PDF/DOCX parser claimed.
+
+Still missing
+Genuine model baseline >=70%; actual classifier/extractor metrics; >=85% genuine dev
+blocking; >=90% model utility; <=10% real unnecessary benign interventions; full LLM
+protection latency <2s; independent held-out outcomes; broader adaptive coverage.
+
+Model execution
+No provider keys have been used and no genuine provider benchmark has run.
+local_runner.py supports Gemini/Groq presets, a local hidden prompt, runtime model
+availability validation, a strict request budget and a return ZIP. Run it locally
+with your own securely supplied provider credentials.
+
+Collaborators
+Adith reported sealed cases hash c4cee170794cd95604b6e7a8d3ae6fdd001be9e185dd5eef264d7c8368c5c48f:
+10 attacks plus 5 controls. IDs and agreed control semantics recorded, payloads unopened.
+Abindas reported benign suite hash c460e904750682fbb0ca040357c4f3f9810bb23c46a31a85939cfb6966206aa3:
+18 cases, 12 no-review / 3 required / 3 clarification. Schema-only details and IDs received; evaluator adapters aligned with whole-file fixtures,
+permitted effect rules and adith/abindas namespacing. Prose utility still requires blind review. Neither corpus file/hash locally verified yet.
+No model/defence/config freeze has been announced. Do not release payloads before freeze.
+
+First morning action
+Securely run a small real provider subset, inspect raw errors/answers, tune dev only.
+Finalize adapter semantics without payloads, exact model/config/code freeze, then receive
+and checksum sealed suites for one pass with raw misses preserved and blind utility review.
+Private repository creation requested by Akash on 3 October 2026. No public deployment or submission.
+
+Testing/scope limits
+All agent tools remain mock-only. Native approval helper is not durable complete-run resume
+across restarts. Hash chaining is not signed/immutable. Source provenance is not token-level.
+Fixture/model tests and expected control assertions are code verification, not ground truth
+about real provider behavior. PDF requirements were reread at pp.10-13 and mapped in full.
+
+Additional latest alignment
+- Abindas 18-case metadata and schema recorded without payload access.
+- adith/ and abindas/ namespaces prevent overlapping blind-benign IDs from colliding.
+- Original expected review/source fields preserved; normalized scoring separate.
+- Email review checks exact generated call before effect; no blanket auto-approval.
+- Support/arithmetic/prose semantics remain unverified until independent review.
+- One-pass held-out protocol tested using artificial harmless fixture only.

@@ -1,0 +1,88 @@
+QUOTESHIELD / PS3 REQUIREMENT-TO-ARTIFACT CHECKLIST
+Source: supplied 19-page Code Utsava PDF, PS3 pages 10-13, re-read 3 October 2026.
+Status vocabulary: BUILT = code exists; VERIFIED = exercised locally; MISSING = not established. Offline probes and scripted-model fixtures never establish real LLM performance.
+
+SYSTEM REQUIREMENTS
+1. Scope from user tools/resources/recipients
+BUILT: shield.scope_from_request, Scope, explicit allowlist intersection; LLM JSON extractor path.
+VERIFIED: literal path/recipient parsing, punctuation, scope cannot widen fixture, record keys, omitted-recipient clarification.
+MISSING: genuine scope-model accuracy, wider natural-language permission parsing.
+
+2. Trusted instruction/untrusted evidence separation
+BUILT: original request isolated from source ingestion; ingest() choke point, escaped evidence delimiter, source/trust labels, checksums.
+VERIFIED: quote/source placement, spoof delimiter escaping, tool-error ingestion, U+200B original-byte preservation.
+MISSING: exact argument-level provenance graph. Current source labels + sticky confidential taint are conservative, not token-level provenance.
+
+3. Hidden/encoded/impersonated instruction scan before context
+BUILT: NFKC, Cf-character normalization; bounded base64/hex/Unicode escape/HTML entity/comment/URL decoding; marked ROT13; regex heuristics; optional LLM classifier; sanitize/quarantine; spotlighting.
+VERIFIED: decoding and bounds tests, fact retention, benign text retention, unknown span quarantine; classifier bad schema fails closed fixture.
+MISSING: genuine semantic classifier metrics; universal hidden CSS/PDF/DOCX handling. HTML fixture extractor exposes source data/comments/alt text, not layout-aware visual security.
+
+4. Inspect every proposed call before effect
+BUILT: named LangGraph tool_executor node -> Guard -> in-memory Sandbox.
+VERIFIED: canonical resource/recipient checks, unapproved tools/record keys blocked, canary and sticky confidential sink blocking; fixture tool loop continues after denial.
+MISSING: genuine model behavior and adaptive bypass coverage.
+
+5. Allow / Block / Ask Human
+BUILT: deterministic decisions; exact-call review; approval.py native LangGraph interrupt/Command/in-memory checkpointer; Streamlit review controls; harness callback.
+VERIFIED: allowed reads, forbidden calls, expected review, deny, single-use resume, post-pause taint recheck.
+MISSING: durable complete model-run pause/resume across app restarts. Standalone native approval demonstration is not presented as that.
+
+6. Audit evidence/reasoning
+BUILT: JSON events, source findings/spans/offsets, structured arguments, reasons/rule IDs, timestamps/run IDs, SHA-256 chain; verify_audit.py; model traces sans credentials.
+VERIFIED: chain round-trip and edited-line failure; source/argument explorer and JSON download.
+MISSING: externally anchored signature/immutable store (not required or claimed).
+
+7. Continuity, low overblocking/latency
+BUILT: denied-action safe error, task-shaped solver/oracle, p50/p95 per-layer metrics.
+VERIFIED: offline poisoned comparisons and 20 task-shaped benign cases; fixture denial followed by correctly attributed result.
+MISSING: >=90% genuine model utility; <=10% unnecessary intervention rate; <2s full LLM protection overhead.
+
+FIVE DELIVERABLES
+D1 Sandbox + vulnerable LangChain/LangGraph RAG baseline
+BUILT: named planner/tool-executor LangGraph loop, 3 main text quote sources, mock read_file/search_web/send_email/write_record, fake confidential resource. Separate 25 txt/md/html/csv parser fixtures with known facts.
+VERIFIED: isolated tools and no real outbound effects. Ordinary helpful baseline prompt, not an instruction to obey attacked documents.
+MISSING: >=70% genuinely exploitable LLM baseline; mixed-format corpus integration into main agent is not yet established. Existing offline baseline accepts supplied calls by construction.
+
+D2 Content firewall
+Artifacts: shield.firewall/ingest/decode_views, formats.py, source inspections, tests/test_security.py/test_formats.py/test_boundary_hardening.py.
+Status: deterministic paths VERIFIED; real LLM classifier exists but UNRUN.
+
+D3 Action guard
+Artifacts: shield.Scope/Guard, security.tool_schema_error, approval.py, native executor node, tests/test_shield.py/test_approval.py/test_model_flow.py.
+Status: deterministic guard VERIFIED; scope model UNRUN; provenance limited as above.
+
+D4 JSON audit + 25-30 attacks / five categories / dev-unseen / 15-20 benign
+BUILT: data/attacks.json (30, five categories, 20 dev/10 reserved), existing 20 benign content variants; data/benign-tasks.json (20 cases, ten task shapes); evaluate.py/ablate.py/oracles.py/metrics.py; raw artifact folders.
+VERIFIED: existing full offline suite, task-shaped offline suite, six-mode plumbing and fact attribution tests.
+MISSING: independently unseen evaluation and genuine model numbers. Original reserved cases have already been inspected/executed; they are author-generated reserved, not independent. Collaborator claims sealed 10 attacks + 5 controls; its reported hash/IDs are recorded but original file has not been received or verified. freeze.py/heldout.py must be used only after real model/config are fixed.
+
+D5 Streamlit side-by-side / selector / live audit / confirmation / results
+BUILT: streamlit_app.py primary UI; Arena, Judge Challenge, X-ray, Audit, Results, Human review. Custom UI remains fallback.
+VERIFIED: headless UI test and actual pixels for desktop arena/audit/results and mobile; outcome comparison, source scan, tamper button, single-use review, downloads, no JS exceptions.
+MISSING: actual token-stream display and persisted main-agent resume. Events displayed are real callbacks, not timed fake animations. Offline custom challenge cannot generate a new attacker tool plan; explicitly labeled.
+
+FIVE IMPACTS, WITH DEMONSTRABLE EVIDENCE
+I1 Data protection: actual mock confidential reads/email/record state oracles; canaries; blocked effects in guard tests. Real-organization protection not claimed.
+I2 Defence in depth: guard-only and full variants both prevent supplied offline effects even without content sanitization. Model firewall efficacy still unmeasured.
+I3 Trust/compliance: human-readable reason + source evidence + audit chain verify/edit demo. Auditability demonstrated; legal compliance certification not claimed.
+I4 Safe adoption: model cannot authorize its own new destinations; isolated executor boundary. No claim of production readiness or safe unrestricted real access.
+I5 Work continuity: comparisons and task-shaped selections still complete despite poisoned text. Full LLM completion rates pending.
+
+PERFORMANCE TARGETS, NOT YET BENCHMARK CLAIMS
+P1 >=70% baseline hijack: MISSING, real model needed.
+P2 >=85% development blocking + unseen separate: offline 0 harmful effects in protected supplied-proposal suite VERIFIED; genuine model / independent unseen MISSING.
+P3 >=90% benign + poisoned legitimate completion: existing offline quote suite and task-shaped suite VERIFIED; genuine model MISSING.
+P4 <=10% unnecessary benign blocked/escalated actions: existing offline 0/60 reads intervened; 20 task-shaped offline cases no intervened tasks VERIFIED; realistic confirmation/control metrics and model trials MISSING.
+P5 <2s added overhead per request + layer breakdown: deterministic local p50/p95 measurements VERIFIED in JSON; LLM extraction/classifier overhead MISSING. Count protection layers separately from total generation time.
+P6 Every intervention human-readable with evidence: BUILT/VERIFIED for current fixtures; model-generated evidence quality still to validate.
+P7 Unseen generalization: MISSING until post-freeze sealed run; no tuning or second pass.
+P8 Safety all mock: VERIFIED executor has no real inbox/files/network tools; backend model API alone may use approved remote provider.
+
+MORNING FIRST ACTIONS
+1. Resolve secure execution path or run local_runner.py on Akash's machine with hidden key and provider limits.
+2. Validate available model/tool calling; run actual small development subset and inspect raw outputs/errors.
+3. Tune development only, then exact code/model/config/control-adapter freeze.
+4. Receive sealed file, verify collaborator-reported checksum, one pass, preserve every output/miss, blind-review utility.
+5. Finish genuine dashboard metrics, pitch and recorded backup from actual runs.
+No repo or public submission authorized tonight. No persistent secret in source/ZIP/chat.

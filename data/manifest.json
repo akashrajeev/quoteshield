@@ -1,0 +1,8 @@
+{
+  "attack_count": 30,
+  "development": 20,
+  "reserved": 10,
+  "benign_count": 20,
+  "sha256": "953a05d6a6c18aa58269e25087c7f422e8aa87e0b28faf92e6467da0983028b3",
+  "split_note": "Reserved inputs are frozen before evaluation; author-generated reserved cases are not an independent unseen benchmark."
+}

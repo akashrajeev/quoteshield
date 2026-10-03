@@ -1,0 +1,306 @@
+{
+  "status": "parser fixture suite, not model evaluation",
+  "count": 25,
+  "quotes": [
+    {
+      "path": "data/mixed-quotes/quote-01.txt",
+      "format": "txt",
+      "facts": {
+        "vendor": "SyntheticVendor01",
+        "price_usd": 10000,
+        "delivery_days": 7,
+        "warranty_months": 12,
+        "support": "24x7"
+      },
+      "extracted": "Vendor: SyntheticVendor01\nPrice: USD 10000\nDelivery: 7 days\nWarranty: 12 months\nSupport: 24x7"
+    },
+    {
+      "path": "data/mixed-quotes/quote-02.md",
+      "format": "md",
+      "facts": {
+        "vendor": "SyntheticVendor02",
+        "price_usd": 10137,
+        "delivery_days": 8,
+        "warranty_months": 24,
+        "support": "24x7"
+      },
+      "extracted": "Vendor: SyntheticVendor02\nPrice: USD 10137\nDelivery: 8 days\nWarranty: 24 months\nSupport: 24x7"
+    },
+    {
+      "path": "data/mixed-quotes/quote-03.html",
+      "format": "html",
+      "facts": {
+        "vendor": "SyntheticVendor03",
+        "price_usd": 10274,
+        "delivery_days": 9,
+        "warranty_months": 36,
+        "support": "24x7"
+      },
+      "extracted": "Vendor: SyntheticVendor03\nPrice: USD 10274\nDelivery: 9 days\nWarranty: 36 months\nSupport: 24x7"
+    },
+    {
+      "path": "data/mixed-quotes/quote-04.csv",
+      "format": "csv",
+      "facts": {
+        "vendor": "SyntheticVendor04",
+        "price_usd": 10411,
+        "delivery_days": 10,
+        "warranty_months": 12,
+        "support": "24x7"
+      },
+      "extracted": "Vendor: SyntheticVendor04\nPrice: USD 10411\nDelivery: 10 days\nWarranty: 12 months\nSupport: 24x7"
+    },
+    {
+      "path": "data/mixed-quotes/quote-05.txt",
+      "format": "txt",
+      "facts": {
+        "vendor": "SyntheticVendor05",
+        "price_usd": 10548,
+        "delivery_days": 11,
+        "warranty_months": 24,
+        "support": "24x7"
+      },
+      "extracted": "Vendor: SyntheticVendor05\nPrice: USD 10548\nDelivery: 11 days\nWarranty: 24 months\nSupport: 24x7"
+    },
+    {
+      "path": "data/mixed-quotes/quote-06.md",
+      "format": "md",
+      "facts": {
+        "vendor": "SyntheticVendor06",
+        "price_usd": 10685,
+        "delivery_days": 12,
+        "warranty_months": 36,
+        "support": "24x7"
+      },
+      "extracted": "Vendor: SyntheticVendor06\nPrice: USD 10685\nDelivery: 12 days\nWarranty: 36 months\nSupport: 24x7"
+    },
+    {
+      "path": "data/mixed-quotes/quote-07.html",
+      "format": "html",
+      "facts": {
+        "vendor": "SyntheticVendor07",
+        "price_usd": 10822,
+        "delivery_days": 13,
+        "warranty_months": 12,
+        "support": "24x7"
+      },
+      "extracted": "Vendor: SyntheticVendor07\nPrice: USD 10822\nDelivery: 13 days\nWarranty: 12 months\nSupport: 24x7"
+    },
+    {
+      "path": "data/mixed-quotes/quote-08.csv",
+      "format": "csv",
+      "facts": {
+        "vendor": "SyntheticVendor08",
+        "price_usd": 10959,
+        "delivery_days": 14,
+        "warranty_months": 24,
+        "support": "24x7"
+      },
+      "extracted": "Vendor: SyntheticVendor08\nPrice: USD 10959\nDelivery: 14 days\nWarranty: 24 months\nSupport: 24x7"
+    },
+    {
+      "path": "data/mixed-quotes/quote-09.txt",
+      "format": "txt",
+      "facts": {
+        "vendor": "SyntheticVendor09",
+        "price_usd": 11096,
+        "delivery_days": 15,
+        "warranty_months": 36,
+        "support": "24x7"
+      },
+      "extracted": "Vendor: SyntheticVendor09\nPrice: USD 11096\nDelivery: 15 days\nWarranty: 36 months\nSupport: 24x7"
+    },
+    {
+      "path": "data/mixed-quotes/quote-10.md",
+      "format": "md",
+      "facts": {
+        "vendor": "SyntheticVendor10",
+        "price_usd": 11233,
+        "delivery_days": 16,
+        "warranty_months": 12,
+        "support": "24x7"
+      },
+      "extracted": "Vendor: SyntheticVendor10\nPrice: USD 11233\nDelivery: 16 days\nWarranty: 12 months\nSupport: 24x7"
+    },
+    {
+      "path": "data/mixed-quotes/quote-11.html",
+      "format": "html",
+      "facts": {
+        "vendor": "SyntheticVendor11",
+        "price_usd": 11370,
+        "delivery_days": 17,
+        "warranty_months": 24,
+        "support": "24x7"
+      },
+      "extracted": "Vendor: SyntheticVendor11\nPrice: USD 11370\nDelivery: 17 days\nWarranty: 24 months\nSupport: 24x7"
+    },
+    {
+      "path": "data/mixed-quotes/quote-12.csv",
+      "format": "csv",
+      "facts": {
+        "vendor": "SyntheticVendor12",
+        "price_usd": 11507,
+        "delivery_days": 18,
+        "warranty_months": 36,
+        "support": "24x7"
+      },
+      "extracted": "Vendor: SyntheticVendor12\nPrice: USD 11507\nDelivery: 18 days\nWarranty: 36 months\nSupport: 24x7"
+    },
+    {
+      "path": "data/mixed-quotes/quote-13.txt",
+      "format": "txt",
+      "facts": {
+        "vendor": "SyntheticVendor13",
+        "price_usd": 11644,
+        "delivery_days": 19,
+        "warranty_months": 12,
+        "support": "24x7"
+      },
+      "extracted": "Vendor: SyntheticVendor13\nPrice: USD 11644\nDelivery: 19 days\nWarranty: 12 months\nSupport: 24x7"
+    },
+    {
+      "path": "data/mixed-quotes/quote-14.md",
+      "format": "md",
+      "facts": {
+        "vendor": "SyntheticVendor14",
+        "price_usd": 11781,
+        "delivery_days": 20,
+        "warranty_months": 24,
+        "support": "24x7"
+      },
+      "extracted": "Vendor: SyntheticVendor14\nPrice: USD 11781\nDelivery: 20 days\nWarranty: 24 months\nSupport: 24x7"
+    },
+    {
+      "path": "data/mixed-quotes/quote-15.html",
+      "format": "html",
+      "facts": {
+        "vendor": "SyntheticVendor15",
+        "price_usd": 11918,
+        "delivery_days": 7,
+        "warranty_months": 36,
+        "support": "24x7"
+      },
+      "extracted": "Vendor: SyntheticVendor15\nPrice: USD 11918\nDelivery: 7 days\nWarranty: 36 months\nSupport: 24x7"
+    },
+    {
+      "path": "data/mixed-quotes/quote-16.csv",
+      "format": "csv",
+      "facts": {
+        "vendor": "SyntheticVendor16",
+        "price_usd": 12055,
+        "delivery_days": 8,
+        "warranty_months": 12,
+        "support": "24x7"
+      },
+      "extracted": "Vendor: SyntheticVendor16\nPrice: USD 12055\nDelivery: 8 days\nWarranty: 12 months\nSupport: 24x7"
+    },
+    {
+      "path": "data/mixed-quotes/quote-17.txt",
+      "format": "txt",
+      "facts": {
+        "vendor": "SyntheticVendor17",
+        "price_usd": 12192,
+        "delivery_days": 9,
+        "warranty_months": 24,
+        "support": "24x7"
+      },
+      "extracted": "Vendor: SyntheticVendor17\nPrice: USD 12192\nDelivery: 9 days\nWarranty: 24 months\nSupport: 24x7"
+    },
+    {
+      "path": "data/mixed-quotes/quote-18.md",
+      "format": "md",
+      "facts": {
+        "vendor": "SyntheticVendor18",
+        "price_usd": 12329,
+        "delivery_days": 10,
+        "warranty_months": 36,
+        "support": "24x7"
+      },
+      "extracted": "Vendor: SyntheticVendor18\nPrice: USD 12329\nDelivery: 10 days\nWarranty: 36 months\nSupport: 24x7"
+    },
+    {
+      "path": "data/mixed-quotes/quote-19.html",
+      "format": "html",
+      "facts": {
+        "vendor": "SyntheticVendor19",
+        "price_usd": 12466,
+        "delivery_days": 11,
+        "warranty_months": 12,
+        "support": "24x7"
+      },
+      "extracted": "Vendor: SyntheticVendor19\nPrice: USD 12466\nDelivery: 11 days\nWarranty: 12 months\nSupport: 24x7"
+    },
+    {
+      "path": "data/mixed-quotes/quote-20.csv",
+      "format": "csv",
+      "facts": {
+        "vendor": "SyntheticVendor20",
+        "price_usd": 12603,
+        "delivery_days": 12,
+        "warranty_months": 24,
+        "support": "24x7"
+      },
+      "extracted": "Vendor: SyntheticVendor20\nPrice: USD 12603\nDelivery: 12 days\nWarranty: 24 months\nSupport: 24x7"
+    },
+    {
+      "path": "data/mixed-quotes/quote-21.txt",
+      "format": "txt",
+      "facts": {
+        "vendor": "SyntheticVendor21",
+        "price_usd": 12740,
+        "delivery_days": 13,
+        "warranty_months": 36,
+        "support": "24x7"
+      },
+      "extracted": "Vendor: SyntheticVendor21\nPrice: USD 12740\nDelivery: 13 days\nWarranty: 36 months\nSupport: 24x7"
+    },
+    {
+      "path": "data/mixed-quotes/quote-22.md",
+      "format": "md",
+      "facts": {
+        "vendor": "SyntheticVendor22",
+        "price_usd": 12877,
+        "delivery_days": 14,
+        "warranty_months": 12,
+        "support": "24x7"
+      },
+      "extracted": "Vendor: SyntheticVendor22\nPrice: USD 12877\nDelivery: 14 days\nWarranty: 12 months\nSupport: 24x7"
+    },
+    {
+      "path": "data/mixed-quotes/quote-23.html",
+      "format": "html",
+      "facts": {
+        "vendor": "SyntheticVendor23",
+        "price_usd": 13014,
+        "delivery_days": 15,
+        "warranty_months": 24,
+        "support": "24x7"
+      },
+      "extracted": "Vendor: SyntheticVendor23\nPrice: USD 13014\nDelivery: 15 days\nWarranty: 24 months\nSupport: 24x7"
+    },
+    {
+      "path": "data/mixed-quotes/quote-24.csv",
+      "format": "csv",
+      "facts": {
+        "vendor": "SyntheticVendor24",
+        "price_usd": 13151,
+        "delivery_days": 16,
+        "warranty_months": 36,
+        "support": "24x7"
+      },
+      "extracted": "Vendor: SyntheticVendor24\nPrice: USD 13151\nDelivery: 16 days\nWarranty: 36 months\nSupport: 24x7"
+    },
+    {
+      "path": "data/mixed-quotes/quote-25.txt",
+      "format": "txt",
+      "facts": {
+        "vendor": "SyntheticVendor25",
+        "price_usd": 13288,
+        "delivery_days": 17,
+        "warranty_months": 12,
+        "support": "24x7"
+      },
+      "extracted": "Vendor: SyntheticVendor25\nPrice: USD 13288\nDelivery: 17 days\nWarranty: 12 months\nSupport: 24x7"
+    }
+  ]
+}

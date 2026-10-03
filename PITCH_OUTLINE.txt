@@ -1,0 +1,31 @@
+QUOTESHIELD / PITCH DECK CONTENT DRAFT
+Editable deck production can follow after measured model results. No fictional metrics.
+
+1. Protect the data. Keep the task moving.
+One procurement task, an untrusted source, a proposed unauthorized effect.
+Visual: paired original task/result, not a wall of threat text.
+
+2. Two boundaries, one task contract
+Trusted request -> scope. Untrusted source -> content firewall -> LangGraph planner.
+Planner call -> action guard -> isolated executor. Executor output -> ingest again.
+Visual: named boxes, three decision paths; no model can grant authority.
+
+3. Watch it happen
+Live-model paired run or explicitly labeled offline/recorded example.
+Visual: baseline actual mock effect, protected rule + finished vendor comparison.
+
+4. Every intervention has evidence
+Exact structured call, source snippet/decoded view, rule, trust labels, human review.
+Visual: one audit event, one exact-call review, verification after a changed copied line.
+Hash chain is tamper-evident against retained head, not immutable or signed.
+
+5. Measured, separately
+Real model development, frozen independent held-out, benign utility and action false positives.
+Visual: genuine model ablation table, count denominators and p50/p95 layers when available.
+Current evidence: offline supplied proposals and local tests only; no placeholder efficacy graph.
+
+6. Scope and next step
+Thin ingest/guard adapters around LangGraph, mock-safe test harness, source/run export.
+Production hardening would need richer semantic provenance, more input formats,
+credential-safe execution provisioning and wider adaptive evaluations.
+Visual: requirement-to-artifact status, not a claim of universal protection.

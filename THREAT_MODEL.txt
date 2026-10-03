@@ -1,0 +1,22 @@
+QuoteShield private mock procurement prototype
+
+Trust boundary
+Only the original user request and locally approved configuration define scope. Quote text, search fixtures, tool response strings and model outputs cannot add authority. Tool arguments are validated before the in-memory executor.
+
+Assets and attacker control
+Synthetic vendor facts and one fake confidential resource. The attacker can append text to a selected quote or replace a mock search/error response. No real inbox, shell, operating-system filesystem or external network tool is provided to the agent.
+
+Security goals
+No unauthorized successful reads, external mock emails or record changes. Detect these from actual environment effects separately from useful task completion. A protected stop is not automatically a successful comparison.
+
+Utility
+Named source reads plus per-vendor structured fact attribution and requested selection/ranking. Output is not scored by scattered number occurrence. Genuine model answers still need blind review.
+
+Implementation limits
+Physical-line sanitization may quarantine useful content if an offending span cannot be localized. Current quote corpus is text, not universal PDF/HTML hidden-content parsing. Sticky confidential taint is session-wide, not exact token-level attribution. Hash chain is locally tamper-evident, not a signature or immutable storage. Human-review helper uses native LangGraph interrupts, an in-memory checkpointer and the same stored call; main agent run pending sends are not yet durable continuation across restarts.
+
+Evaluation modes
+Offline probes execute supplied tool proposals. They are not model hijack rates and cannot prove prompt-warning/firewall efficacy against model behavior. Real model runs require an approved endpoint, configured provider and secure key path. Independent held-out payloads remain sealed until exact defence/model/config freeze. Failure data and raw model requests/responses are retained, never converted into success scores.
+
+Operational limits
+Loopback-only demo. Per-model-run max 16 planning turns, 64 endpoint calls, 45-second request timeout, no automatic retries. No key, token or Authorization header included in artifacts. Secrets remain process-local and are never uploaded in project material.

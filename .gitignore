@@ -1,0 +1,20 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+artifacts/llm-*.json
+
+# Credentials, local environments, generated media and real-provider results
+.env.*
+*.pem
+*.key
+*.p12
+.venv/
+venv/
+.streamlit/secrets.toml
+artifacts/screenshots/
+artifacts/provider-runs/
+artifacts/held-out-*/
+*.mp4
+*.webm
+*.zip

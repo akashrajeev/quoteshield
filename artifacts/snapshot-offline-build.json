@@ -1,0 +1,37 @@
+{
+  "files": {
+    "benign_adapter.py": "4c8e99e46677267f30aab4b4f1cbb04631dcc27956d824ccd28203aff38491be",
+    "freeze.py": "61bc9ccc63a9375f35aa330358c923dbc4af0f84a2fe17edd5697144780c75c3",
+    "formats.py": "c7dade4da2140993da7bade84fc6111823073b438b65461e6fb0f4e0f8a8a34e",
+    "metrics.py": "4bb629f2c77af099ca3243b0fb170426edd8efe4c4979a823d3f2e6e08587956",
+    "shield.py": "82beb1af6ce939cb8d7203262f5cd67154b7b383730e598d2cb1faf9435f9d33",
+    "security.py": "7d9779cdc16de153f55fe9159c8616fb81206949dbcb6835fa142b12b7ada12f",
+    "oracles.py": "85746d78619aefd7a042845ebea038e9c70400a9ea3279deb99d90f337ce3bf8",
+    "approval.py": "35e297c123461665ad110c5589443c2f7ad53047ec07c75db3382e0459f06b72",
+    "control_adapters.py": "ce067765965e063f07da6456c6011b93309e9b7f39dda83e8f9b9dfb8943844e",
+    "ablate.py": "2acb842f74c50d9674fa04663d6c4e811c3e1c3d4891a0fbfc8d37c4f5de4788",
+    "evaluate.py": "b70af03ddd9a85c429eb897426219c5622e8d7f87e3ee0224dedb5958e022242",
+    "heldout.py": "31d4d3c4984fca1d98c5aa95ce111fdf4b2eb5b122922088da76835002df3a9f",
+    "requirements.txt": "05caefa1395d13ae5d1cc3463ccedd0354d025c7de32cdcb6a2f4b515141b020",
+    "streamlit_app.py": "763ed6f3eba930732e70365061e4e82da2948f989071915c6be6a8058b9a45c3",
+    "local_runner.py": "cb8ab375971a92cbe675ee17f84c44e13580239e6cabe2cc0d7eeda565ff8707",
+    "data/heldout-control-map.json": "c64566df184268f307968e785dc8a601365e9aa3beb45ae120f8a25cdd164626",
+    "data/heldout-id-manifest.json": "5495cd33a1acb05b33db6ada0268c7b5ec9f8bccf52568ce58b8c5013fac84a6",
+    "data/attacks.json": "953a05d6a6c18aa58269e25087c7f422e8aa87e0b28faf92e6467da0983028b3",
+    "data/benign-tasks.json": "2a468dcc8d11479908f8749a71a4ff50a4a1aadf18f262056db83b19a0d2597b"
+  },
+  "model": "",
+  "endpoint": "",
+  "python": "3.10.12",
+  "packages": {
+    "langgraph": "1.2.12",
+    "httpx": "0.28.1",
+    "streamlit": "1.64.0"
+  },
+  "max_turns": 16,
+  "max_model_calls": 64,
+  "temperature": 0,
+  "timeout_seconds": 45,
+  "held_out_run_policy": "one pass, no tuning, raw outputs preserved",
+  "freeze_sha256": "4cef1178e989561c7d13d20b860a26e4ee452b19fa6417bf592bf298599d10aa"
+}

@@ -1,0 +1,5 @@
+Vendor: SyntheticVendor21
+Price: USD 12740
+Delivery: 13 days
+Warranty: 36 months
+Support: 24x7

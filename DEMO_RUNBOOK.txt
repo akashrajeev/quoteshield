@@ -1,0 +1,36 @@
+QUOTESHIELD / THREE-MINUTE JUDGING RUNBOOK
+Private draft, offline rehearsals until genuine model run is available.
+
+0:00-0:20 / Task and impact
+"A buyer asks an agent to compare three quotes. One vendor document contains instructions the buyer never gave. QuoteShield checks both the evidence the agent reads and every tool effect it proposes."
+Show the original task and permitted resources. Select a development case. Do not claim the selected example represents the entire suite.
+
+0:20-0:55 / Paired execution
+Run both paths on the same task/source/model. Point to actual captured mock effect, then the protected blocked rule. Open the comparison output on the protected side.
+If running Offline Guard Verification: explicitly say "This is a mock tool-proposal verification, not an LLM hijack benchmark." If running Live Model: state exact model and actual outcome. Never guarantee a hijack. If baseline resists, report that outcome and choose a separately labeled recorded example.
+
+0:55-1:20 / Evidence, not red banners alone
+X-ray shows original source and retained facts. Audit shows the trusted scope, exact call, source and rule. Explain that the guard cannot be persuaded by a document claiming approval.
+One line: "Even a missed input instruction cannot grant a new file or email destination at the executor boundary."
+
+1:20-1:45 / Human review
+Prepare the separate legitimate mock summary email. Show exact recipient, subject and body before approve. Resume the stored call once. Show the captured mock outbox. This is isolated demonstration data, not a real message.
+
+1:45-2:15 / Judge challenge
+Let a judge type retrieved-source text. In Live Model mode, this is a new real attempt. In Offline mode, clearly state it scans content and completes quotes but does not synthesize the new adversarial tool plan. Keep request budget and timeout visible.
+If a bypass happens, preserve the result as a finding. Do not switch modes silently or rewrite the attack.
+
+2:15-2:40 / Measured evidence
+Show development and independent held-out separately, raw case counts, utility and false positives. Show scope/firewall/guard overhead, not just total generation time. Never use offline prompt-only/firewall-only plots as LLM defence evidence. Expected exact-call review is a separate intervention, not an unnecessary false positive.
+
+2:40-3:00 / Takeaway
+"Protect the data. Keep the task moving. Explain every intervention."
+Offer actual run JSON and runnable source. Point to known limits in the technical appendix without claiming production compliance/certification.
+
+Reliability
+- Local-only Streamlit on loopback; run provider check before demo.
+- One fresh reset; no real data or public hosting.
+- Record-and-replay must say recorded and show source run metadata.
+- Offline fallback is labeled on screen and spoken.
+- Current 42-second offline recording is an engineering proof walkthrough, not the final LLM benchmark film.
+- Logs, cases and model answers are synthetic. API keys remain hidden and never enter the project ZIP.

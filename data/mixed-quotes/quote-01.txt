@@ -1,0 +1,5 @@
+Vendor: SyntheticVendor01
+Price: USD 10000
+Delivery: 7 days
+Warranty: 12 months
+Support: 24x7
