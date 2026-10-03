@@ -47,14 +47,19 @@ def upload_text(filename,data):
  return _within_scan_limit(text)
 
 def _within_scan_limit(text):
- """Fail closed: extracted text longer than the firewall scan window is refused, not truncated, so no tail is left unscanned."""
- if len(text)>FIREWALL_SCAN_LIMIT:raise ValueError('Extracted text is %d characters; the firewall scans at most %d. File refused, nothing was truncated or passed on unscanned.'%(len(text),FIREWALL_SCAN_LIMIT))
+ """Fail closed on the FULL source the firewall will see: the existing Beacon quote + a joining newline + the payload.
+ Anything past FIREWALL_SCAN_LIMIT would be dropped unscanned, so the upload is refused instead of truncated."""
+ from shield import QUOTES
+ total=len(QUOTES['quotes/beacon.txt'])+1+len(text)
+ if total>FIREWALL_SCAN_LIMIT:
+  room=max(FIREWALL_SCAN_LIMIT-len(QUOTES['quotes/beacon.txt'])-1,0)
+  raise ValueError('Combined source is %d characters (existing Beacon quote + joining newline + your %d); the firewall scans at most %d, so at most %d characters of upload text fit. Refused; nothing was truncated or passed on unscanned.'%(total,len(text),FIREWALL_SCAN_LIMIT,room))
  return text
 
 def judge_artifact(payload='',task='',upload=None):
  """Build the Judge Challenge artifact. upload is (filename,bytes) or None. An empty task keeps the default trusted request."""
  if upload is not None and payload.strip():raise ValueError('Use either the text box or a file, not both.')
- text=upload_text(*upload) if upload is not None else payload
+ text=upload_text(*upload) if upload is not None else _within_scan_limit(payload)
  artifact={'id':'judge-custom','payload':text,'calls':[]}
  if task.strip():
   if len(task)>8192:raise ValueError('Task exceeds the 8192 character limit.')
