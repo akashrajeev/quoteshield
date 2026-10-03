@@ -102,7 +102,7 @@ python local_runner.py --provider groq
 python local_runner.py --provider gemini
 ```
 
-The hidden prompt asks for the provider key locally, never writes it to disk, validates the preset model via the provider's model list, then runs a small real development subset. Presets: `openai/gpt-oss-120b` on Groq; `gemini-2.5-flash` on Gemini. `--model` overrides a preset if unavailable. Default maximum is 20 generation requests, two attack and two benign cases, paced at two requests/minute. Set `--max-requests`, `--case-limit` and `--rpm` only within your approved limit. One extra model-list request is used for validation. A request count is not a dollar spending cap; use a free-only project or the provider's own hard cap. Stop on any transport/quota error, preserving partial run artifacts.
+The hidden prompt asks for the provider key locally, never writes it to disk, validates the preset model via the provider's model list, then runs a small real development subset. Presets: `openai/gpt-oss-120b` on Groq; `gemini-3.8-flash` on Gemini. `--model` overrides a preset if unavailable. Default maximum is 20 generation requests, two attack and two benign cases, paced at two requests/minute. Set `--max-requests`, `--case-limit` and `--rpm` only within your approved limit. One extra model-list request is used for validation. A request count is not a dollar spending cap; use a free-only project or the provider's own hard cap. Stop on any transport/quota error, preserving partial run artifacts.
 
 A timestamped results folder and adjacent ZIP contain config, raw per-lane runs, summary and return instructions. Send only that ZIP back. Never include a key or `.env`. It does not open any sealed held-out payload or announce a freeze.
 
@@ -181,7 +181,7 @@ Defaults:
 
 | Provider | Model | Base URL |
 | --- | --- | --- |
-| Gemini | `gemini-2.5-flash` | `https://generativelanguage.googleapis.com/v1beta/openai` |
+| Gemini | `gemini-3.8-flash` | `https://generativelanguage.googleapis.com/v1beta/openai` |
 | Groq | `openai/gpt-oss-120b` | `https://api.groq.com/openai/v1` |
 | OpenRouter | `nvidia/nemotron-3.5-lightning:free` | `https://openrouter.ai/api/v1` |
 | NVIDIA hosted NIM | `nvidia/llama-3.1-nemotron-nano-8b-v1` | `https://integrate.api.nvidia.com/v1` |

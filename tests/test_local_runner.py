@@ -15,7 +15,7 @@ class LocalRunnerTests(unittest.TestCase):
     self.assertEqual(report['config']['kind'],'fixture_orchestration_check')
    finally:os.environ.pop('SHIELD_MODEL_KEY',None)
  def test_presets(self):
-  self.assertEqual(PRESETS['gemini']['model'],'gemini-2.5-flash');self.assertEqual(PRESETS['groq']['model'],'openai/gpt-oss-120b')
+  self.assertEqual(PRESETS['gemini']['model'],'gemini-3.8-flash');self.assertEqual(PRESETS['groq']['model'],'openai/gpt-oss-120b')
  def test_provider_configuration(self):
   from unittest.mock import patch
   from provider_config import configure
