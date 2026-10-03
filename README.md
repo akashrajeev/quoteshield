@@ -223,3 +223,15 @@ Official provider references:
 - https://openrouter.ai/docs/guides/routing/model-variants/free
 - https://docs.api.nvidia.com/nim/reference/nvidia-llama-3_1-nemotron-nano-8b-v1-infer
 - https://docs.nvidia.com/nim/large-language-models/latest/api-reference.html
+
+### NVIDIA NIM URL and key fields
+
+The template explicitly provides `NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1`
+and an empty `NVIDIA_API_KEY=` field. Fill your key locally in `.env` and select
+`SHIELD_PROVIDER=nvidia`. For a self-hosted NIM, replace only the base URL with your
+server's address, such as `http://localhost:8000/v1`, and use its configured key.
+The URL must end in `/v1`, not `/chat/completions`; the runner/app append the latter.
+`GEMINI_BASE_URL`, `GROQ_BASE_URL` and `OPENROUTER_BASE_URL` are also explicit in the
+template. Blank base URL values fall back to the corresponding hosted default.
+Never send hosted keys to an untrusted custom server. Restart Streamlit after
+editing `.env` so the new environment is loaded.

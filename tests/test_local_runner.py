@@ -35,3 +35,16 @@ class LocalRunnerTests(unittest.TestCase):
    self.assertEqual(key,'fixture-only-value');self.assertEqual(os.environ['SHIELD_MODEL_NAME'],'shell-model')
    configure('groq','cli-model');self.assertEqual(os.environ['SHIELD_MODEL_NAME'],'cli-model')
    configure('nvidia');self.assertNotIn('SHIELD_MODEL_KEY',os.environ);self.assertEqual(os.environ['SHIELD_MODEL_URL'],'http://localhost:8000/v1/chat/completions')
+
+ def test_all_base_overrides_and_blank_defaults(self):
+  from unittest.mock import patch
+  from provider_config import configure
+  for provider in PRESETS:
+   with self.subTest(provider=provider),patch.dict(os.environ,{},clear=True):
+    name=provider.upper()+"_BASE_URL"
+    os.environ[name]="http://localhost:8000/v1/"
+    configure(provider)
+    self.assertEqual(os.environ["SHIELD_MODEL_URL"],"http://localhost:8000/v1/chat/completions")
+    os.environ[name]=""
+    configure(provider)
+    self.assertEqual(os.environ["SHIELD_MODEL_URL"],PRESETS[provider]["endpoint"])
