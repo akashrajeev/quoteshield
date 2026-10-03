@@ -43,6 +43,8 @@ def extract_image(filename,data):
  except Exception:exif={}
  for tag,label in [(0x010E,'ImageDescription'),(0x9286,'UserComment'),(0x013B,'Artist'),(0x8298,'Copyright'),(0x9C9C,'XPComment')]:
   value=exif.get(tag)
+  if isinstance(value,(bytes,bytearray)):
+   raw=bytes(value);value=(raw[8:] if raw[:8] in (b'ASCII\x00\x00\x00',b'UNICODE\x00',b'JIS\x00\x00\x00\x00\x00') and tag==0x9286 else raw).decode('utf-16-le' if raw[:8]==b'UNICODE\x00' or tag==0x9C9C else 'utf-8',errors='replace').replace('\x00','')
   if value and str(value).strip():parts.append('[image exif %s] %s'%(label,value))
  binary=find_tesseract()
  if not binary:_fail(INSTALL_NOTE)
