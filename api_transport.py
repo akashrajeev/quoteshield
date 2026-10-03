@@ -103,7 +103,11 @@ class ModelAdapter:
  def json(self,system,value):
   content=self.complete([{'role':'system','content':system},{'role':'user','content':json.dumps(value)}],json_output=True)['content']
   try:
-   parsed=json.loads(re.sub(r'^```(?:json)?\s*|\s*```$','',content.strip()))
+   try:parsed=json.loads(re.sub(r'^```(?:json)?\s*|\s*```$','',content.strip()))
+   except ValueError:
+    from jsonextract import extract_json_object
+    parsed=extract_json_object(content)
+    if parsed is None:raise
    if not isinstance(parsed,dict):raise RuntimeError('Model returned invalid structured JSON: expected an object; run stopped')
    return parsed
   except RuntimeError:raise
