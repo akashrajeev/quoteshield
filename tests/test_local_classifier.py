@@ -64,3 +64,17 @@ class RealModel(unittest.TestCase):
   self.assertGreaterEqual(self.model.score(text),0.5)
 
 if __name__=='__main__':unittest.main()
+
+class BackendSelection(unittest.TestCase):
+ def test_backends_listed_and_default_is_protectai(self):
+  import local_classifier as lc
+  self.assertEqual(set(lc.BACKENDS), {'protectai', 'promptguard2'})
+  self.assertEqual(lc.DEFAULT_BACKEND, 'protectai')
+ def test_unknown_backend_fails_closed(self):
+  import local_classifier as lc
+  with self.assertRaises(RuntimeError): lc.LocalClassifier('/nonexistent', 0.5, 'nope')
+ def test_promptguard2_download_is_refused_with_instructions(self):
+  import os, local_classifier as lc
+  from unittest import mock
+  with mock.patch.dict(os.environ, {'SHIELD_LOCAL_CLASSIFIER_BACKEND': 'promptguard2'}):
+   with self.assertRaises(RuntimeError): lc.download('/tmp/x')
