@@ -32,14 +32,18 @@ def extract(data,format):
 FIREWALL_SCAN_LIMIT=32768  # the firewall only scans/passes the first 32768 characters; longer uploads are refused, never truncated
 UPLOAD_FORMATS=('txt','md','html','csv','pdf','docx')
 DOC_UPLOAD_FORMATS=('pdf','docx')
-UPLOAD_REFUSED_FORMATS=('png','jpg','jpeg','webp')  # offered by the uploader only so the explicit OCR-not-supported refusal is shown
+IMAGE_UPLOAD_FORMATS=('png','jpg','jpeg','webp')  # read by extractors_image (local Tesseract OCR + metadata); refused loudly if Tesseract is missing
+UPLOAD_REFUSED_FORMATS=()  # nothing is offered only to be refused any more; other types are rejected as unsupported
 def upload_text(filename,data):
- """Plain-text extraction of one uploaded file for the Judge Challenge slot. No layout fidelity and no OCR. PDF/DOCX go through extractors_doc; images are refused."""
+ """Plain-text extraction of one uploaded file for the Judge Challenge slot. No layout fidelity. PDF/DOCX go through extractors_doc; png/jpg/jpeg/webp go through extractors_image (best-effort OCR + metadata, refused loudly when OCR cannot run)."""
  name=str(filename or '');ext=name.rsplit('.',1)[-1].lower() if '.' in name else ''
- if ext in DOC_UPLOAD_FORMATS or ext in UPLOAD_REFUSED_FORMATS:
+ if ext in IMAGE_UPLOAD_FORMATS:
+  from extractors_image import extract_image
+  return _within_scan_limit(extract_image(name,data))
+ if ext in DOC_UPLOAD_FORMATS:
   from extractors_doc import extract_document
   return _within_scan_limit(extract_document(name,data))
- if ext not in UPLOAD_FORMATS:raise ValueError('Unsupported file type. Upload '+', '.join('.'+f for f in UPLOAD_FORMATS)+' only. Images are not supported (no OCR yet) and other formats are not parsed.')
+ if ext not in UPLOAD_FORMATS:raise ValueError('Unsupported file type. Upload '+', '.join('.'+f for f in UPLOAD_FORMATS)+' only. Images ('+', '.join('.'+f for f in IMAGE_UPLOAD_FORMATS)+') need local Tesseract OCR; other formats are not parsed.')
  if not isinstance(data,(bytes,bytearray)):raise ValueError('Upload must be raw bytes.')
  try:text=extract(bytes(data),ext)
  except UnicodeDecodeError:raise ValueError('File is not valid UTF-8 text.')
