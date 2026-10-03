@@ -262,3 +262,15 @@ Groq tool_use_failed means the provider rejected a generated tool call; changing
 providers or hiding that miss would invalidate the benchmark. Restart Streamlit
 after pulling updates; previous offline results no longer remain under a failed
 live run.
+
+### Generated unknown-tool recovery
+
+Provider HTTP 400 `tool_use_failed` or explicit unknown-tool-name errors receive
+at most two corrective attempts on the SAME model, listing valid tool names (or
+requiring plain JSON content for classifier/scope calls that expose no tools).
+Every attempt is traced with retry_count and consumes the same global request
+budget and pacing allowance. There is no retry for quota/auth/transport/model-ID
+errors and no model fallback. Exhaustion remains an error, not a pass. Report both
+first-attempt and recovered outcomes; these recovered runs are not zero-retry
+baseline measurements. Old "no automatic retry" descriptions refer to other errors
+and are superseded only for this narrowly identified generated-tool failure.

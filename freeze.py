@@ -3,11 +3,11 @@ from pathlib import Path
 import hashlib,json,sys,platform
 from importlib.metadata import version
 from shield import ModelAdapter
-FILES=['benign_adapter.py','freeze.py','formats.py','metrics.py','shield.py','security.py','oracles.py','approval.py','control_adapters.py','ablate.py','evaluate.py','heldout.py','requirements.txt','streamlit_app.py','local_runner.py','data/heldout-control-map.json','data/heldout-id-manifest.json','data/attacks.json','data/benign-tasks.json']
+FILES=['api_transport.py','provider_config.py','data/evaluator-changes.json','benign_adapter.py','freeze.py','formats.py','metrics.py','shield.py','security.py','oracles.py','approval.py','control_adapters.py','ablate.py','evaluate.py','heldout.py','requirements.txt','streamlit_app.py','local_runner.py','data/heldout-control-map.json','data/heldout-id-manifest.json','data/attacks.json','data/benign-tasks.json']
 def snapshot(require_model=True,control_map=None):
  m=ModelAdapter()
  if require_model and not m.available:raise RuntimeError('Cannot freeze model evaluation without a model configuration')
- values={'files':{str(f):hashlib.sha256(Path(f).read_bytes()).hexdigest() for f in FILES},'model':m.model,'endpoint':m.url,'python':platform.python_version(),'packages':{p:version(p) for p in ['langgraph','httpx','streamlit']},'max_turns':16,'max_model_calls':64,'temperature':0,'timeout_seconds':45,'held_out_run_policy':'one pass, no tuning, raw outputs preserved'}
+ values={'files':{str(f):hashlib.sha256(Path(f).read_bytes()).hexdigest() for f in FILES},'model':m.model,'endpoint':m.url,'python':platform.python_version(),'packages':{p:version(p) for p in ['langgraph','httpx','streamlit']},'max_turns':16,'max_model_calls':64,'temperature':0,'timeout_seconds':45,'tool_error_recovery_max_retries':2,'held_out_run_policy':'one pass, no tuning, raw outputs preserved','evaluator_changes':json.loads(Path('data/evaluator-changes.json').read_text())}
  if control_map:values['control_map_sha256']=hashlib.sha256(Path(control_map).read_bytes()).hexdigest()
  values['freeze_sha256']=hashlib.sha256(json.dumps(values,sort_keys=True,separators=(',',':')).encode()).hexdigest()
  return values

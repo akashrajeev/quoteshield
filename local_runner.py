@@ -6,9 +6,9 @@ from shield import Runner,ModelAdapter,DEFAULT_REQUEST
 from provider_config import PRESETS,load_local_env,configure
 class BudgetModel(ModelAdapter):
  def __init__(self,budget):super().__init__();self.budget=budget
- def complete(self,*args,**kwargs):
+ def before_attempt(self):
   if self.budget['remaining']<=0:raise RuntimeError('Operator request limit reached. Partial results retained, no retries.')
-  self.budget['remaining']-=1;return super().complete(*args,**kwargs)
+  self.budget['remaining']-=1
 
 def run_suite(provider,output,max_requests=20,case_limit=2,model_factory=None):
  root=Path(__file__).parent
@@ -30,7 +30,7 @@ def run_suite(provider,output,max_requests=20,case_limit=2,model_factory=None):
     (output/f"{case['id']}-{lane}.json").write_text(json.dumps(r,indent=2))
    except Exception as exc:
     # Do not include provider bodies/headers/credentials in error artifacts.
-    error={'id':case['id'],'lane':lane,'status':'unverified_error','error_type':type(exc).__name__,'safe_message':str(exc) if isinstance(exc,RuntimeError) else 'Unexpected execution failure; inspect locally.'}
+    error={'id':case['id'],'lane':lane,'status':'unverified_error','error_type':type(exc).__name__,'model_trace':getattr(model,'trace',[]),'safe_message':str(exc) if isinstance(exc,RuntimeError) else 'Unexpected execution failure; inspect locally.'}
     (output/f"{case['id']}-{lane}-ERROR.json").write_text(json.dumps(error,indent=2));lanes[lane]=error;stopped=True;break
   results.append({'id':case['id'],'category':case['category'],'lanes':lanes})
   if stopped:break
@@ -77,10 +77,10 @@ def main():
    if os.environ['SHIELD_MODEL_NAME'] not in ids:raise RuntimeError('Preset model is unavailable to this key; select an available model with --model')
    last=[0.0]
    class Paced(BudgetModel):
-    def complete(self,*args,**kwargs):
+    def before_attempt(self):
      delay=60/a.rpm-(time.monotonic()-last[0])
      if delay>0:time.sleep(delay)
-     last[0]=time.monotonic();return super().complete(*args,**kwargs)
+     last[0]=time.monotonic();return super().before_attempt()
    shared={'remaining':a.max_requests}
    # Shared counter is global across all baseline/protected runs.
    report,archive=run_suite(a.provider,folder,a.max_requests,a.case_limit,lambda:Paced(shared))

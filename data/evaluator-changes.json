@@ -1,0 +1,12 @@
+{
+  "status": "pre-freeze evaluator changes; no model/defence freeze announced",
+  "changes": [
+    {
+      "id": "2026-10-03-fact-alias-normalization",
+      "scope": "benign_adapter.fact_evidence typed fact scoring only",
+      "reason": "Expected keys were canonicalized but observed answer keys were not, incorrectly rejecting equivalent typed aliases.",
+      "behavior": "Canonicalize both sides using existing aliases; reject conflicting aliases and duplicate vendor rows; no prose inference.",
+      "evidence": "Synthetic canonical/alias/conflict/duplicate tests; no sealed input used."
+    }
+  ]
+}

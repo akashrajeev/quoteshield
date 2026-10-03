@@ -19,8 +19,19 @@ class TransportTests(unittest.TestCase):
   for url,error in examples:
    with self.subTest(url=url),patch.dict(os.environ,{'SHIELD_MODEL_URL':url,'SHIELD_MODEL_NAME':'fixture-model'}),patch('httpx.post',return_value=httpx.Response(400,json={'error':{'message':error}})) as post:
     with self.assertRaisesRegex(RuntimeError,error):ModelAdapter().complete([{'role':'user','content':'mock'}])
-    self.assertEqual(post.call_count,1)
+    self.assertEqual(post.call_count,3 if error=="tool_use_failed" else 1)
  def test_bad_known_provider_path_rejected_locally(self):
   with patch.dict(os.environ,{'SHIELD_MODEL_URL':'https://api.groq.com/v1/chat/completions','SHIELD_MODEL_NAME':'fixture'}),patch('httpx.post') as post:
    with self.assertRaisesRegex(RuntimeError,'/openai/v1'):ModelAdapter().complete([])
    post.assert_not_called()
+ def test_tool_retry_recovers_same_model_and_counts_attempts(self):
+  from local_runner import BudgetModel
+  responses=[httpx.Response(400,json={'error':{'code':'tool_use_failed','message':"attempted tool json not in request.tools"}}),httpx.Response(200,json={'choices':[{'message':{'role':'assistant','content':'ok'}}]})]
+  with patch.dict(os.environ,{'SHIELD_MODEL_URL':'https://api.groq.com/openai/v1/chat/completions','SHIELD_MODEL_NAME':'fixture'}),patch('httpx.post',side_effect=responses) as post:
+   budget={'remaining':3};m=BudgetModel(budget);m.complete([{'role':'user','content':'test'}],[{'type':'function','function':{'name':'read_file','parameters':{'type':'object'}}}])
+   self.assertEqual(budget['remaining'],1);self.assertEqual(len(m.trace),2);self.assertEqual(m.trace[-1]['retry_count'],1);self.assertIn('read_file',post.call_args.kwargs['json']['messages'][-1]['content']);self.assertEqual(post.call_args.kwargs['json']['model'],'fixture')
+ def test_retry_cannot_exceed_global_budget(self):
+  from local_runner import BudgetModel
+  with patch.dict(os.environ,{'SHIELD_MODEL_URL':'https://api.groq.com/openai/v1/chat/completions','SHIELD_MODEL_NAME':'fixture'}),patch('httpx.post',return_value=httpx.Response(400,json={'error':{'code':'tool_use_failed'}})) as post:
+   with self.assertRaisesRegex(RuntimeError,'request limit'):BudgetModel({'remaining':1}).complete([])
+   self.assertEqual(post.call_count,1)

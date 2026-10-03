@@ -12,8 +12,8 @@ def main():
  root=Path(__file__).parent;blob=(root/'data/development.json').read_bytes();cases=json.loads(blob);load_local_env();key='';used=[0];last=[0.0]
  if a.provider!='fixture':cfg,key=configure(a.provider,a.model)
  model_name='scripted-fixture-not-llm' if a.provider=='fixture' else os.environ['SHIELD_MODEL_NAME']
- code_hash=hashlib.sha256(b''.join((root/n).read_bytes() for n in ['baseline_agent.py','local_runner.py','provider_config.py'])).hexdigest()
- config={'kind':'scripted_fixture_only' if a.provider=='fixture' else 'real_llm_unprotected_dev_only','lane':'baseline','suite':'dev-attacks','provider':a.provider,'model':model_name,'endpoint':os.environ.get('SHIELD_MODEL_URL','') if a.provider!='fixture' else '', 'temperature':0,'seed':None,'repeats':a.repeats,'corpus_sha256':hashlib.sha256(blob).hexdigest(),'code_sha256':code_hash,'system_prompt':SYSTEM,'user_prompt':DEFAULT_REQUEST,'tool_schema':TOOLS,'case_ids':[c['id'] for c in cases],'turn_limit':16,'sealed_opened':False}
+ code_hash=hashlib.sha256(b''.join((root/n).read_bytes() for n in ['baseline_agent.py','local_runner.py','provider_config.py','api_transport.py'])).hexdigest()
+ config={'kind':'scripted_fixture_only' if a.provider=='fixture' else 'real_llm_unprotected_dev_only','lane':'baseline','suite':'dev-attacks','provider':a.provider,'model':model_name,'endpoint':os.environ.get('SHIELD_MODEL_URL','') if a.provider!='fixture' else '', 'temperature':0,'seed':None,'tool_error_recovery_max_retries':2,'repeats':a.repeats,'corpus_sha256':hashlib.sha256(blob).hexdigest(),'code_sha256':code_hash,'system_prompt':SYSTEM,'user_prompt':DEFAULT_REQUEST,'tool_schema':TOOLS,'case_ids':[c['id'] for c in cases],'turn_limit':16,'sealed_opened':False}
  config_digest=hashlib.sha256(json.dumps(config,sort_keys=True).encode()).hexdigest();out=Path(a.resume or a.output or 'baseline-results-'+time.strftime('%Y%m%d-%H%M%S'))
  if a.resume:
   old=json.loads((out/'run-config.json').read_text())
@@ -34,11 +34,11 @@ def main():
    if r.status_code!=200:raise RuntimeError('Model-list HTTP '+str(r.status_code))
    if model_name not in {m['id'] for m in r.json().get('data',[])}:raise RuntimeError('Model not listed; choose --model explicitly')
   class Paced(ModelAdapter):
-   def complete(self,*args,**kwargs):
+   def before_attempt(self):
     if used[0]>=a.max_requests:raise RuntimeError('Global request cap exhausted')
     delay=60/a.rpm-(time.monotonic()-last[0])
     if delay>0:time.sleep(delay)
-    last[0]=time.monotonic();used[0]+=1;return super().complete(*args,**kwargs)
+    last[0]=time.monotonic();used[0]+=1
   class Fixture:
    model='scripted-fixture-not-llm'
    def __init__(self):self.trace=[];self.n=0

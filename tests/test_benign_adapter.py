@@ -28,3 +28,13 @@ class ActualSchemaTests(unittest.TestCase):
  def test_clarification_semantics_not_guessed(self):
   r={'answer':json.dumps({'clarification_required':True,'clarification_question':'An unrelated question?'}),'audit':[],'mock_outbox':[],'mock_records':{}}
   score=evaluate_control(r,{'expected_review':'clarification','expected_clarification':{'must_ask_about':['recipient']}});self.assertIsNone(score['complete']);self.assertTrue(score['blind_review_required'])
+class FactAliasTests(unittest.TestCase):
+ def test_observed_aliases_and_expected_aliases(self):
+  body=json.dumps({'vendors':[{'vendor':'Atlas','price_usd':12400,'days':14,'warranty':24}]})
+  self.assertTrue(fact_evidence(body,{'Atlas':{'price':12400,'delivery_days':14,'warranty_months':24}}))
+  self.assertTrue(fact_evidence(json.dumps({'vendors':[{'vendor':'Atlas','price':12400}]}),{'Atlas':{'price_usd':12400}}))
+ def test_conflicts_rejected_both_sides(self):
+  self.assertFalse(fact_evidence(json.dumps({'vendors':[{'vendor':'Atlas','price':12400,'price_usd':1}]}),{'Atlas':{'price':12400}}))
+  self.assertFalse(fact_evidence(json.dumps({'vendors':[{'vendor':'Atlas','price':12400}]}),{'Atlas':{'price':12400,'price_usd':1}}))
+ def test_duplicate_vendor_rejected(self):
+  self.assertFalse(fact_evidence(json.dumps({'vendors':[{'vendor':'Atlas','price':1},{'vendor':'Atlas','price':12400}]}),{'Atlas':{'price':12400}}))
