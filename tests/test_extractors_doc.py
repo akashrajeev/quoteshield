@@ -32,6 +32,9 @@ class PdfTests(unittest.TestCase):
  def test_rejections(self):
   for name,data in [('a.pdf',b'not a pdf'),('a.pdf',b'%PDF-1.4 garbage'),('a.pdf',make_pdf('')),('a.pdf',make_pdf('x',extra_catalog=' /OpenAction << /S /JavaScript /JS (app.alert(1)) >>')),('a.pdf',make_pdf('x',extra_catalog=' /Names << /JavaScript << /Names [] >> >>'))]:
    with self.assertRaises(ValueError,msg=name):extract_document(name,data)
+ def test_scanned_pdf_message_does_not_suggest_images(self):
+  with self.assertRaises(ValueError) as cm:extract_document('a.pdf',make_pdf(''))
+  self.assertNotIn('upload the page as an image',str(cm.exception));self.assertIn('not supported in this version',str(cm.exception))
  def test_size_limit(self):
   with self.assertRaises(ValueError):extract_document('a.pdf',b'%PDF-'+b'x'*(5*1024*1024))
 class DocxTests(unittest.TestCase):
@@ -51,6 +54,29 @@ class DocxTests(unittest.TestCase):
   buf=io.BytesIO()
   with zipfile.ZipFile(buf,'w') as z:z.writestr('other.xml','x')
   with self.assertRaises(ValueError):extract_document('a.docx',buf.getvalue())
+ def test_malformed_core_metadata_is_valueerror(self):
+  with self.assertRaisesRegex(ValueError,'docProps/core.xml'):extract_document('a.docx',make_docx(extra={'docProps/core.xml':'<broken'}))
+ def test_corrupt_member_crc_and_unsupported_compression(self):
+  import struct
+  buf=io.BytesIO()
+  with zipfile.ZipFile(buf,'w',zipfile.ZIP_DEFLATED) as z:
+   z.writestr('word/document.xml','<w:document %s><w:body><w:p><w:r><w:t>ok</w:t></w:r></w:p></w:body></w:document>'%NS)
+   z.writestr('word/comments.xml','<w:comments %s><w:comment><w:p><w:r><w:t>%s</w:t></w:r></w:p></w:comment></w:comments>'%(NS,'comment text '*50))
+  raw=bytearray(buf.getvalue());i=raw.find(b'word/comments.xml')+len(b'word/comments.xml')+8
+  bad=bytearray(raw);bad[i]^=0xFF  # corrupt compressed stream
+  with self.assertRaisesRegex(ValueError,'comments.xml'):extract_document('a.docx',bytes(bad))
+  unsupported=io.BytesIO()
+  with zipfile.ZipFile(unsupported,'w') as z:
+   z.writestr('word/document.xml','<w:document %s><w:body><w:p><w:r><w:t>ok</w:t></w:r></w:p></w:body></w:document>'%NS)
+  raw=bytearray(unsupported.getvalue());raw[raw.find(b'PK\x03\x04')+8:raw.find(b'PK\x03\x04')+10]=struct.pack('<H',99)
+  j=raw.find(b'PK\x01\x02');raw[j+10:j+12]=struct.pack('<H',99)
+  with self.assertRaisesRegex(ValueError,'document.xml'):extract_document('a.docx',bytes(raw))
+ def test_bad_crc_in_stored_member(self):
+  buf=io.BytesIO()
+  with zipfile.ZipFile(buf,'w',zipfile.ZIP_STORED) as z:
+   z.writestr('word/document.xml','<w:document %s><w:body><w:p><w:r><w:t>ok</w:t></w:r></w:p></w:body></w:document>'%NS)
+  raw=bytearray(buf.getvalue());i=raw.find(b'<w:document');raw[i+len('<w:document')+5]^=1
+  with self.assertRaisesRegex(ValueError,'document.xml'):extract_document('a.docx',bytes(raw))
  def test_corrupt_xml(self):
   with self.assertRaises(ValueError):extract_document('a.docx',make_docx(extra={'word/comments.xml':'<broken'}))
 class ImageTests(unittest.TestCase):
