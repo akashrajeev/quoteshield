@@ -43,36 +43,7 @@ class Decision:
 POLICY_PATH='vendors/cedar-security-policy.txt'
 KNOWN_RESOURCES=set(QUOTES)|{POLICY_PATH}
 
-class ModelAdapter:
- """Optional OpenAI-compatible endpoint. No model access without operator config."""
- def __init__(self):
-  self.url = os.environ.get('SHIELD_MODEL_URL','')
-  self.model = os.environ.get('SHIELD_MODEL_NAME','')
-  self.key = os.environ.get('SHIELD_MODEL_KEY','')
-  self.trace=[];self.calls=0;self.max_calls=64
- @property
- def available(self): return bool(self.url and self.model)
- def complete(self, messages, tools=None):
-  import httpx
-  if not self.available: raise RuntimeError('Configure SHIELD_MODEL_URL and SHIELD_MODEL_NAME for genuine model execution.')
-  if self.calls>=self.max_calls:raise RuntimeError('Model request budget exhausted')
-  self.calls+=1
-  body={'model':self.model,'messages':messages,'temperature':0}
-  if tools: body.update(tools=tools,tool_choice='auto')
-  headers={'Content-Type':'application/json'}
-  if self.key: headers['Authorization']='Bearer '+self.key
-  started=time.perf_counter()
-  try:
-   r=httpx.post(self.url,json=body,headers=headers,timeout=45)
-   if r.status_code>=400:raise RuntimeError(f'Model endpoint returned HTTP {r.status_code}; no automatic retry')
-   response=r.json();message=response['choices'][0]['message']
-   self.trace.append({'request':body,'response':response,'latency_ms':(time.perf_counter()-started)*1000})
-   return message
-  except (httpx.HTTPError,ValueError,KeyError,IndexError) as exc:raise RuntimeError('Model transport or response schema failed; no automatic retry') from exc
- def json(self, system, value):
-  content=self.complete([{'role':'system','content':system},{'role':'user','content':json.dumps(value)}])['content']
-  try: return json.loads(re.sub(r'^```(?:json)?\s*|\s*```$','',content.strip()))
-  except Exception as e: raise RuntimeError('Model returned invalid structured JSON') from e
+from api_transport import ModelAdapter
 
 def scope_from_request(request: str, model: ModelAdapter | None=None) -> Scope:
  """Only authenticated request enters this function. LLM cannot widen capabilities."""

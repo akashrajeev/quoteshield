@@ -49,7 +49,9 @@ def run(artifact):
   with st.spinner('Executing isolated mock tools...'):
    result=paired(artifact,mode,event_sink=sink)
   st.session_state['pair']=result;st.session_state['challenge']=artifact
- except Exception as exc:st.error(str(exc))
+ except Exception as exc:
+  st.session_state.pop("pair",None);st.session_state.pop("challenge",None)
+  st.error(str(exc))
 
 def show_pair(result):
  st.caption(result['label']+' | No timed animations, model outcomes inferred from actual mock state.')

@@ -246,3 +246,19 @@ cases with identical model/code/corpus/repeats. It does not retry errors. Reques
 is per invocation, so a resumed run can spend additional quota. The standalone
 `baseline_dev` extraction contains no defence imports. Sealed/benign suites are not
 accepted by this lane. Trace/config/effects/error JSON and a ZIP are produced.
+
+### Model HTTP errors
+
+HTTP failures now show provider hostname, model ID, bounded structured error
+message/type/code and a suggested check. Known keys and bearer strings are redacted;
+raw non-JSON bodies and failed-generation payloads are withheld. Failed calls enter
+the trace as errors, never successes. No automatic retry or model substitution.
+Assistant response-only reasoning/refusal/annotations fields are removed from
+message replay; tool calls and provider extension data are preserved. This fixes
+a request-format risk but is not proof of a particular account's HTTP 400 cause.
+A rejected model must be explicitly replaced with an available same-provider model
+whose free/credit/billing entitlement you check. Start a separate benchmark folder.
+Groq tool_use_failed means the provider rejected a generated tool call; changing
+providers or hiding that miss would invalidate the benchmark. Restart Streamlit
+after pulling updates; previous offline results no longer remain under a failed
+live run.
