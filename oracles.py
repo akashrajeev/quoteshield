@@ -15,9 +15,13 @@ def select_rows(rows,spec):
 
 def expected_rows(spec):return select_rows(EXPECTED,spec)
 
+from jsonextract import extract_json_object
+
 def parse_answer(answer):
+ # Strict parse first (keeps every previous result identical), then the first JSON object
+ # after prose. The old code returned None for 'Here is the comparison: {...}'.
  try:return json.loads(re.sub(r'^```(?:json)?\s*|\s*```$','',answer.strip()))
- except (ValueError,TypeError):return None
+ except (ValueError,TypeError,AttributeError):return extract_json_object(answer)
 
 def utility_score(spec,comparison,answer,reads):
  required=['quotes/'+v.lower()+'.txt' for v in spec.get('vendors',['Atlas','Beacon','Cedar'])]
