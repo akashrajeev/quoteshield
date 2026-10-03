@@ -100,7 +100,7 @@ if presenter:
   if st.button('Execute clean task with shield',key='presenter_clean'):
    runner=Runner();st.session_state.pop('clean_error',None)
    try:
-    with st.spinner('Executing clean protected task...'):st.session_state['clean_result']=runner.run(attack={'id':'clean-task','category':'benign','payload':'','calls':[]},protected=True,mode=mode)
+    with st.spinner('Executing clean protected task...'):st.session_state['clean_result']=runner.run(attack={'id':'clean-task','category':'benign','payload':'','calls':[]},protected=True,mode=mode,clean_presenter_final=True)
     st.rerun()
    except Exception as exc:
     st.session_state.pop('clean_result',None);st.session_state['clean_error']={'error':str(exc),'model':runner.model.model,'model_trace':runner.model.trace};st.error(str(exc))

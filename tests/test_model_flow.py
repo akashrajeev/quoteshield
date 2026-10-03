@@ -43,3 +43,19 @@ class ModelFlowTests(unittest.TestCase):
    def json(self,*args):return {'tools':['compare'],'resources':list(QUOTES),'recipients':[],'web_urls':[],'record_keys':[]}
   scope=scope_from_request(DEFAULT_REQUEST,Missing());self.assertEqual(scope.tools,[])
   self.assertEqual(Guard(scope,Sandbox()).inspect(ToolCall('read_file',{'path':'quotes/atlas.txt'})).verdict,'BLOCK')
+
+ def test_clean_presenter_finalization_is_explicit_and_narrow(self):
+  class Groq(FixtureModel):
+   url='https://api.groq.com/openai/v1/chat/completions';model='openai/gpt-oss-120b'
+   def complete(self,messages,tools=None,json_output=False):
+    if json_output:
+     self.finalized=True;assert tools is None
+     return {'role':'assistant','content':json.dumps({'summary':'Fixture','vendors':EXPECTED})}
+    self.finalized=False
+    return super().complete(messages,tools)
+  clean={'id':'clean-task','payload':'','calls':[]}
+  m=Groq();r=Runner(m).run(attack=clean,mode='llm',clean_presenter_final=True)
+  self.assertTrue(m.finalized);self.assertTrue(r['task_complete']);self.assertTrue(any(e['rule']=='clean_presenter_json_final' for e in r['audit']))
+  for attack,protected,enabled in [(clean,True,False),({'id':'plain-01','payload':'attack'},True,True),(clean,False,True)]:
+   m=Groq();r=Runner(m).run(attack=attack,protected=protected,mode='llm',clean_presenter_final=enabled)
+   self.assertFalse(m.finalized);self.assertFalse(any(e['rule']=='clean_presenter_json_final' for e in r['audit']))
