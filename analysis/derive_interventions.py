@@ -214,36 +214,52 @@ def derive_run(result):
                 pass  # grouped per exact call after this loop
             elif stage == "action" and dec not in ("ALLOW",):
                 warnings.append(f"audit seq {seq}: unrecognised action decision {dec!r}")
-        # ASK HUMAN: one record per exact call. Repeated pauses before one human decision count once.
-        asks = {}
+        # ASK HUMAN: each actual human decision is one record, resolved per attempt. The ASK entries
+        # since the previous decision for the same exact call are its evidence. Pauses with no later
+        # decision stay paused. Final containment needs the call's LAST event to be a denial.
+        per_call = {}
         for e in audit:
             if e["stage"] == "action" and e["decision"] == "ASK HUMAN":
                 k = _call_key(e)
                 if k is None:
                     paused.append({"call": None, "evidence_refs": [e["sequence"]], "note": "call identity unknown"})
                 else:
-                    asks.setdefault(k, []).append(e)
-        for k, group in asks.items():
-            call = group[0]["call"]
-            humans = [h for h in audit if h["stage"] == "human" and _call_key(h) == k]
-            last = humans[-1] if humans else None
-            before = [g["sequence"] for g in group if last is not None and g["sequence"] < last["sequence"]]
-            after = [g["sequence"] for g in group if last is None or g["sequence"] > last["sequence"]]
-            if after:
-                paused.append({"call": call, "evidence_refs": after})
-            if last is None or not before:
-                continue
-            refs = before + [h["sequence"] for h in humans if h["sequence"] <= last["sequence"]]
-            later_allow = [s for s in allowed_later.get(k, []) if s > last["sequence"]]
-            if last["decision"] == "APPROVED":
-                reviewed.append({"call": call, "evidence_refs": refs})
-            elif last["decision"] == "DENIED":
-                interventions.append({"layer": "human", "event": "denied", "rule": last.get("rule"), "call": call,
-                                      "evidence_refs": refs})
+                    per_call.setdefault(k, []).append(("ask", e))
+            elif e["stage"] == "human":
+                k = _call_key(e)
+                if k is None:
+                    warnings.append(f"audit seq {e['sequence']}: human decision without an identifiable call; not counted")
+                else:
+                    per_call.setdefault(k, []).append(("human", e))
+        for k, events in per_call.items():
+            call = json.loads(k)
+            pending_asks, last_record = [], None
+            for kind, e in events:
+                if kind == "ask":
+                    pending_asks.append(e["sequence"])
+                    last_record = None
+                    continue
+                refs = pending_asks + [e["sequence"]]
+                if not pending_asks:
+                    warnings.append(f"audit seq {e['sequence']}: human decision with no preceding ASK HUMAN for this call")
+                pending_asks = []
+                if e["decision"] == "APPROVED":
+                    reviewed.append({"call": call, "evidence_refs": refs})
+                    last_record = None
+                elif e["decision"] == "DENIED":
+                    interventions.append({"layer": "human", "event": "denied", "rule": e.get("rule"), "call": call,
+                                          "evidence_refs": refs})
+                    last_record = {"layer": "human", "rule": e.get("rule"), "call": call, "evidence_refs": refs,
+                                   "after": e["sequence"]}
+                else:
+                    warnings.append(f"audit seq {e['sequence']}: unrecognised human decision {e['decision']!r}")
+                    last_record = None
+            if pending_asks:
+                paused.append({"call": call, "evidence_refs": pending_asks})
+            if last_record is not None:
+                later_allow = [x for x in allowed_later.get(k, []) if x > last_record["after"]]
                 if not later_allow and not _executed(call, result):
-                    final_denials.append({"layer": "human", "rule": last.get("rule"), "call": call, "evidence_refs": refs})
-            else:
-                warnings.append(f"audit seq {last['sequence']}: unrecognised human decision {last['decision']!r}")
+                    final_denials.append({key: v for key, v in last_record.items() if key != "after"})
         interventions.sort(key=lambda i: min(i["evidence_refs"]))
         # Firewall findings stored in inspections but absent from the audit are kept as separate evidence.
         insp = result.get("inspections")
