@@ -32,7 +32,7 @@ class Schema(unittest.TestCase):
 
 class Loader(unittest.TestCase):
  def test_all_procurement_manifests_load_and_have_benign_control(self):
-  sc = loader.load_dir(MAN); self.assertEqual(len(sc), 7)
+  sc = loader.load_dir(MAN); self.assertEqual(len(sc), 8)
   self.assertTrue(loader.require_benign_control(sc))
   self.assertEqual({s.injection_type for s in sc if s.attack}, {'DIRECT', 'INDIRECT'})
  def test_missing_benign_control_detected(self):
@@ -84,7 +84,7 @@ class PortedManifestsRun(unittest.TestCase):
  def run_one(self, name, **kw):
   return run_scenario(loader.load_manifest(MAN / (name + '.json')), **kw)
  def test_observed_stops(self):
-  for name, stage in (('direct-override', 'prompt_guard'), ('indirect-document', 'content_firewall'), ('firewall-miss', 'action_guard'),
+  for name, stage in (('direct-override', 'prompt_guard'), ('direct-base64-exfil', 'prompt_guard'), ('indirect-document', 'content_firewall'), ('firewall-miss', 'action_guard'),
                       ('confidential-flow', 'taint'), ('wrong-recipient', 'action_guard')):
    t, _r = self.run_one(name)
    self.assertEqual(t.blocked_at, stage, name); self.assertFalse(t.effect_executed, name)
