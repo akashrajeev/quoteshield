@@ -35,6 +35,8 @@ class Resource:
  path: str
  classification: str = 'INTERNAL'
  provenance: Optional[Provenance] = None
+ content: str = ''  # resolved text of the resource, from content_ref or inline (synthetic)
+ content_ref: str = ''
 
 @dataclass(frozen=True)
 class Policy:
@@ -52,6 +54,7 @@ class Attack:
  payload: str = ''
  scripted_calls: tuple = ()
  payload_ref: str = ''
+ host_resource: str = ''  # declared resource whose text carries the payload (default: the procurement mock quote)
 
 @dataclass(frozen=True)
 class Evaluation:
@@ -91,7 +94,7 @@ def _provenance(d):
  if not d: return None
  return Provenance(**{k: d[k] for k in Provenance.__dataclass_fields__ if k in d})
 
-def scenario_from_dict(d, resolve_ref=None):
+def scenario_from_dict(d, resolve_ref=None, resolve_text=None):
  """Validate and build a Scenario. resolve_ref(path) -> dict supplies payload/calls for payload_ref."""
  if not isinstance(d, dict): raise ManifestError('manifest must be an object')
  _forbidden(d)
@@ -102,7 +105,13 @@ def scenario_from_dict(d, resolve_ref=None):
  for r in d.get('resources', []):
   cls = r.get('classification', 'INTERNAL')
   if cls not in CLASSIFICATIONS: raise ManifestError('%s: bad classification %r' % (sid, cls))
-  resources.append(Resource(id=_need(r, 'id', sid), path=_need(r, 'path', sid), classification=cls, provenance=_provenance(r.get('provenance'))))
+  cref, text = r.get('content_ref', ''), r.get('content', '')
+  if cref:
+   if resolve_text is None: raise ManifestError('%s: content_ref needs a resolver' % sid)
+   text = resolve_text(cref)
+  prov = _provenance(r.get('provenance'))
+  if cref and prov is None and hasattr(resolve_text, 'provenance'): prov = _provenance(resolve_text.provenance(cref))
+  resources.append(Resource(id=_need(r, 'id', sid), path=_need(r, 'path', sid), classification=cls, provenance=prov, content=text, content_ref=cref))
  p = d.get('policy', {})
  policy = Policy(tuple(p.get('authorized_resources', [])), tuple(p.get('authorized_recipients', [])),
                  tuple(p.get('allowed_tools', [])), tuple(p.get('ask_human_for', [])))
@@ -120,7 +129,9 @@ def scenario_from_dict(d, resolve_ref=None):
   if ref:
    if resolve_ref is None: raise ManifestError('%s: payload_ref needs a resolver' % sid)
    data = resolve_ref(ref); payload = data.get('payload', payload); calls = list(data.get('calls', calls))
-  attack = Attack(it, pl, ob, payload, tuple(calls), ref)
+  host = a.get('host_resource', '')
+  if host and host not in {x.path for x in resources}: raise ManifestError('%s: host_resource %r is not a declared resource' % (sid, host))
+  attack = Attack(it, pl, ob, payload, tuple(calls), ref, host)
  benign = bool(d.get('benign_control', False))
  if benign and attack: raise ManifestError('%s: a benign control carries no attack' % sid)
  if not benign and not attack: raise ManifestError('%s: needs an attack, or benign_control true' % sid)
