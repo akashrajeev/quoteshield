@@ -274,3 +274,35 @@ errors and no model fallback. Exhaustion remains an error, not a pass. Report bo
 first-attempt and recovered outcomes; these recovered runs are not zero-retry
 baseline measurements. Old "no automatic retry" descriptions refer to other errors
 and are superseded only for this narrowly identified generated-tool failure.
+
+## Local Ollama in the paired app
+
+Run Ollama on the same machine as Streamlit. Use the exact installed model tag:
+
+```dotenv
+SHIELD_PROVIDER=custom
+SHIELD_MODEL_URL=http://localhost:11434/v1/chat/completions
+SHIELD_MODEL_NAME=qwen3:4b
+SHIELD_MODEL_KEY=
+SHIELD_OLLAMA_NO_THINK=1
+```
+
+The custom value bypasses hosted-provider presets. Only loopback hosts
+(localhost, 127.0.0.1, ::1), port 11434 and `/v1/chat/completions` receive the
+Ollama compatibility behavior: tools remain available, but unsupported
+`tool_choice` is omitted. With `SHIELD_OLLAMA_NO_THINK=1`, every scope,
+classifier and planner request sends `reasoning_effort=none`. This is the
+OpenAI-compatible setting, not native `/api/chat`'s `think:false` field.
+Omit the flag to retain the model's normal thinking configuration.
+
+The request trace records the actual reasoning setting. Label new runs with
+model tag and `reasoning_effort=none`; do not pool them with thinking-enabled
+runs. Both lanes use the same adapter configuration. These changes were tested
+with mocked requests, not real local generation. Tool calls, structured JSON,
+latency and memory fit on the laptop remain unverified. Thinking controls are
+model-specific; GPT-OSS cannot fully disable thinking. No baseline-dev bundle,
+sealed protocol or evaluator was changed. The existing 45-second call timeout
+still applies. This block is for the paired app, not the baseline-only CLI.
+
+Sources: https://docs.ollama.com/api/openai-compatibility and
+https://docs.ollama.com/capabilities/thinking .

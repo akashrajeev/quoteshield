@@ -41,6 +41,8 @@ class ModelAdapter:
   if not parsed.path.endswith('/chat/completions'):raise RuntimeError('SHIELD_MODEL_URL must end in /chat/completions; BASE_URL should omit that suffix')
   if parsed.hostname=='generativelanguage.googleapis.com' and not parsed.path.startswith('/v1beta/openai/'):raise RuntimeError('Gemini OpenAI-compatible URL must use /v1beta/openai/chat/completions')
   if parsed.hostname=='api.groq.com' and not parsed.path.startswith('/openai/v1/'):raise RuntimeError('Groq OpenAI-compatible URL must use /openai/v1/chat/completions')
+  local_ollama=parsed.scheme in ('http','https') and parsed.hostname in ('localhost','127.0.0.1','::1') and parsed.port==11434 and parsed.path=='/v1/chat/completions'
+  if local_ollama and os.environ.get('SHIELD_OLLAMA_NO_THINK')=='1':body['reasoning_effort']='none'
   transport_meta={'endpoint':parsed.scheme+'://'+(parsed.hostname or '')+parsed.path,'auth_scheme':'Bearer' if self.key else 'none','auth_present':bool(self.key)}
   names=[]
   if tools:
@@ -49,7 +51,8 @@ class ModelAdapter:
     fn=tool.get('function',{})
     if tool.get('type')!='function' or not fn.get('name') or fn.get('parameters',{}).get('type')!='object':raise RuntimeError('Invalid OpenAI function tool schema')
     names.append(fn['name'])
-   body.update(tools=tools,tool_choice='auto')
+   body['tools']=tools
+   if not local_ollama:body['tool_choice']='auto'
    if parsed.hostname=='api.groq.com' and self.model.startswith('openai/gpt-oss-'):
     body['parallel_tool_calls']=False
   if parsed.hostname=='api.groq.com' and not tools and json_output:
