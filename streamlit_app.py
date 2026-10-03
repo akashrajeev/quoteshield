@@ -72,6 +72,7 @@ def run(artifact):
    for lane,protected in [('baseline',False),('protected',True)]:
     active_lane=lane;lane_starts[lane]=len(runner.model.trace)
     partial[lane]=runner.run(request,artifact,protected,mode,event_sink=lambda e,lane=lane:sink(lane,e),request_confirmed=bool(artifact.get('request_confirmed')))
+    partial[lane]['explanation']=__import__('scenario_engine.explain',fromlist=['explain_run']).explain_run(partial[lane],lane=lane)
    result={**partial,'label':'LLM agent run' if mode=='llm' else 'Offline adversarial tool-proposal verification'}
   pipeline.caption('Execution complete. Scope, firewall and guard decisions are recorded; the agent result and mock effects are captured. Human review appears only when requested.')
   st.session_state['pair']=result;st.session_state['challenge']=artifact
@@ -90,8 +91,16 @@ if 'pair_error' in st.session_state:
   st.json(st.session_state['pair_error'])
   st.download_button('Download failed paired run JSON',json.dumps(st.session_state['pair_error'],indent=2),'quoteshield-paired-error.json','application/json')
 
+def show_explanations(result):
+ for _lane in ('protected','baseline'):
+  _ex=result[_lane].get('explanation')
+  if _ex:
+   with st.expander('What happened, %s lane: %s'%(_lane,_ex['summary']),expanded=(_lane=='protected')):
+    st.markdown(_ex['markdown']);st.caption('Generated from the records of this run (no model). Also in the downloaded JSON as "explanation".')
+
 def show_pair(result):
  st.caption(result['label']+' | No timed animations, model outcomes inferred from actual mock state.')
+ show_explanations(result)
  with st.expander('Trusted scope and observed data flow'):
   st.json(result['protected']['scope'])
   for lane in ['baseline','protected']:
@@ -214,12 +223,16 @@ if not presenter:
    else:
     try:run(artifact)
     except __import__('request_guard').RequestNeedsConfirmation as exc:
-     st.session_state['needs_confirm']={'artifact':artifact,'message':str(exc),'findings':exc.result['findings']}
+     st.session_state['needs_confirm']={'artifact':artifact,'message':str(exc),'findings':exc.result['findings'],'explanation':__import__('scenario_engine.explain',fromlist=['explain_run']).explain_run(request_check=exc.result,request=artifact.get('request'))}
   if 'needs_confirm' in st.session_state:
    pending=st.session_state['needs_confirm']
-   st.warning(pending['message']);st.json(pending['findings'])
+   st.markdown('<div style="background:#fff3c4;color:#4d3a00;border-left:5px solid #d4a017;padding:12px 16px;border-radius:6px;font-weight:600">'+__import__('html').escape(pending['message'])+'</div>',unsafe_allow_html=True);st.json(pending['findings'])
+   if pending.get('explanation'):
+    with st.expander('Why this task was flagged',expanded=True):st.markdown(pending['explanation']['markdown'])
    if st.button('Confirm and run this task'):
     st.session_state.pop('needs_confirm');run({**pending['artifact'],'request_confirmed':True})
+  if 'pair' in st.session_state and (st.session_state.get('challenge') or {}).get('id')=='judge-custom' and 'needs_confirm' not in st.session_state:
+   show_explanations(st.session_state['pair'])
  with tabs[2]:
   st.subheader('Read the source boundary')
   active=st.session_state.get('challenge',attack)
