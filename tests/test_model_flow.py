@@ -59,3 +59,11 @@ class ModelFlowTests(unittest.TestCase):
   for attack,protected,enabled in [(clean,True,False),({'id':'plain-01','payload':'attack'},True,True),(clean,False,True)]:
    m=Groq();r=Runner(m).run(attack=attack,protected=protected,mode='llm',clean_presenter_final=enabled)
    self.assertFalse(m.finalized);self.assertFalse(any(e['rule']=='clean_presenter_json_final' for e in r['audit']))
+
+class RouteLaneSummaryTests(unittest.TestCase):
+ def test_completed_run_summarizes_only_its_lane_trace(self):
+  class Routed(FixtureModel):
+   def __init__(self):super().__init__();self.trace=[{'response_model':'earlier-lane'}]
+   def complete(self,messages,tools=None):
+    result=super().complete(messages,tools);self.trace.append({'response_model':'a' if self.steps==1 else 'b','routed_via':'provider/model'});return result
+  r=Runner(Routed()).run(mode='llm');self.assertTrue(r['routing_summary']['model_changed_within_run']);self.assertEqual(r['routing_summary']['response_models'],['a','b']);self.assertNotIn('earlier-lane',r['routing_summary']['response_models'])

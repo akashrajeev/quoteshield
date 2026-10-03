@@ -85,3 +85,19 @@ class RequestTimeoutConfigTests(unittest.TestCase):
    m=ModelAdapter()
    with self.assertRaisesRegex(RuntimeError,'ReadTimeout'):m.complete([])
    self.assertEqual(post.call_count,1);self.assertEqual(m.trace[0]['transport']['timeout_s'],180)
+
+class RoutingDiagnosticsTests(unittest.TestCase):
+ def test_actual_model_and_case_insensitive_route_header(self):
+  response=httpx.Response(200,json={'model':'served-a','choices':[{'message':{'content':'ok'}}]},headers={'x-routed-via':'provider/served-a'})
+  with patch.dict(os.environ,{'SHIELD_MODEL_URL':'http://localhost:3001/v1/chat/completions','SHIELD_MODEL_NAME':'auto','SHIELD_MODEL_KEY':''}),patch('httpx.post',return_value=response) as post:
+   m=ModelAdapter();m.complete([]);self.assertEqual(m.trace[0]['response_model'],'served-a');self.assertEqual(m.trace[0]['routed_via'],'provider/served-a');self.assertEqual(post.call_count,1);self.assertEqual(post.call_args.kwargs['json']['model'],'auto')
+ def test_route_summary_changed_same_and_unknown(self):
+  from api_transport import route_summary
+  for trace,want in [([{'response_model':'a'},{'response_model':'b'}],True),([{'routed_via':'p/a'},{'routed_via':'q/b'}],True),([{'response_model':'a'},{'response_model':'a'}],False)]:self.assertEqual(route_summary(trace)['model_changed_within_run'],want)
+  s=route_summary([{},{}]);self.assertFalse(s['model_changed_within_run']);self.assertTrue(s['route_identity_incomplete']);self.assertEqual(s['observed_identity_attempts'],0)
+ def test_route_metadata_redacts_key_and_preserves_header_on_schema_failure(self):
+  key='fixture-private'
+  with patch.dict(os.environ,{'SHIELD_MODEL_URL':'http://localhost:3001/v1/chat/completions','SHIELD_MODEL_NAME':'auto','SHIELD_MODEL_KEY':key}),patch('httpx.post',return_value=httpx.Response(200,json={'model':key,'choices':[]},headers={'X-Routed-Via':key})):
+   m=ModelAdapter()
+   with self.assertRaises(RuntimeError):m.complete([])
+   self.assertEqual(m.trace[0]['response_model'],'[REDACTED]');self.assertEqual(m.trace[0]['routed_via'],'[REDACTED]')

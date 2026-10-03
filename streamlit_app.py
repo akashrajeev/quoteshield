@@ -6,6 +6,7 @@ import streamlit as st
 from shield import Runner,paired,ModelAdapter,firewall,Scope,Sandbox,Guard,ToolCall,QUOTES
 from security import AuditLog
 from formats import UPLOAD_FORMATS,UPLOAD_REFUSED_FORMATS,judge_artifact
+from api_transport import route_summary
 from approval import ApprovalWorkflow
 from oracles import parse_answer
 from provider_config import load_local_env,configure,PRESETS
@@ -46,7 +47,7 @@ attack=next(a for a in catalog if a['id']==attack_id)
 tabs=st.tabs(['Attack Arena','Judge Challenge','X-ray','Audit Explorer','Results','Human review']) if not presenter else []
 def run(artifact):
  st.session_state.pop('pair_error',None)
- runner=Runner();partial={};active_lane='baseline'
+ runner=Runner();partial={};active_lane='baseline';lane_starts={}
  live=st.empty();pipeline=st.empty();events=[]
  def sink(lane,event):
   events.append({'lane':lane,**event})
@@ -59,7 +60,7 @@ def run(artifact):
   with st.spinner('Executing isolated mock tools...'):
    request=artifact.get('request', __import__('shield').DEFAULT_REQUEST)
    for lane,protected in [('baseline',False),('protected',True)]:
-    active_lane=lane
+    active_lane=lane;lane_starts[lane]=len(runner.model.trace)
     partial[lane]=runner.run(request,artifact,protected,mode,event_sink=lambda e,lane=lane:sink(lane,e))
    result={**partial,'label':'LLM agent run' if mode=='llm' else 'Offline adversarial tool-proposal verification'}
   pipeline.caption('Execution complete. Scope, firewall and guard decisions are recorded; the agent result and mock effects are captured. Human review appears only when requested.')
@@ -68,7 +69,7 @@ def run(artifact):
   return True
  except Exception as exc:
   st.session_state.pop("pair",None);st.session_state.pop("challenge",None)
-  st.session_state['pair_error']={'error':str(exc),'failed_lane':active_lane,'case_id':artifact.get('id'),'mode':mode,'model':runner.model.model,'partial_results':partial,'events':events,'model_trace':runner.model.trace}
+  st.session_state['pair_error']={'error':str(exc),'failed_lane':active_lane,'case_id':artifact.get('id'),'mode':mode,'model':runner.model.model,'partial_results':partial,'events':events,'model_trace':runner.model.trace,'routing_summary_by_lane':{lane:route_summary(partial[lane].get('model_trace',[])) if lane in partial else route_summary(runner.model.trace[start:]) for lane,start in lane_starts.items()}}
   return False
 
 if 'pair_error' in st.session_state:

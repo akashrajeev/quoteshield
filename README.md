@@ -326,3 +326,31 @@ is recorded as `transport.timeout_s` on successful and failed request attempts.
 Label runs with model, reasoning setting, JSON request shape and timeout; do not
 pool changed configurations. This does not retry a timeout or guarantee that a
 slow model will finish. Both paired lanes use the same setting.
+
+## FreeLLMAPI local router diagnostics
+
+For its documented default server (same machine as Streamlit):
+
+```dotenv
+SHIELD_PROVIDER=custom
+SHIELD_MODEL_URL=http://localhost:3001/v1/chat/completions
+SHIELD_MODEL_NAME=auto
+SHIELD_MODEL_KEY=<your local router unified key>
+SHIELD_MODEL_TIMEOUT_S=180
+```
+
+The local unified key comes from the router's Keys page; it is not an upstream
+provider key. Leave it empty only if your router explicitly permits unauthenticated
+calls. Do not commit real keys. Different server ports need their actual URL.
+
+Each attempt records `response_model` from response.model and `routed_via` from
+X-Routed-Via when present. Completed live lanes have a `routing_summary`;
+failed paired exports have `routing_summary_by_lane`. `model_changed_within_run`
+is true when multiple returned model IDs or route identities were observed.
+Missing identities set `route_identity_incomplete`; false is not proof that the
+same model served every call. The router's reported identities are diagnostic
+claims, not independently verified model identity. Auto-routing/fallback results
+are mixed-router experiments, not controlled same-model efficacy measurements.
+No new retries are introduced in QuoteShield; the router may have its own retries.
+
+Source: https://raw.githubusercontent.com/tashfeenahmed/freellmapi/HEAD/README.md .

@@ -24,6 +24,12 @@ def error_detail(response,key=''):
   return redact(error,key)
  except (ValueError,TypeError):return 'Provider returned a non-JSON error; raw body withheld'
 
+def route_summary(trace):
+ models=list(dict.fromkeys(t.get('response_model') for t in trace if t.get('response_model')))
+ routes=list(dict.fromkeys(t.get('routed_via') for t in trace if t.get('routed_via')))
+ observed=[t for t in trace if t.get('response_model') or t.get('routed_via')]
+ return {'model_changed_within_run':len(models)>1 or len(routes)>1,'response_models':models,'routed_via':routes,'route_identity_incomplete':any(not t.get('response_model') and not t.get('routed_via') for t in trace),'observed_identity_attempts':len(observed),'total_attempts':len(trace)}
+
 class ModelAdapter:
  def __init__(self):
   try:self.timeout_s=float(os.environ.get('SHIELD_MODEL_TIMEOUT_S','45'))
@@ -66,27 +72,33 @@ class ModelAdapter:
   for retry in range(3):
    if self.calls>=self.max_calls:raise RuntimeError('Model request budget exhausted')
    self.before_attempt();self.calls+=1;started=time.perf_counter()
+   response_meta={'response_model':None,'routed_via':None}
    try:
     r=httpx.post(self.url,json=body,headers=headers,timeout=self.timeout_s)
+    route=r.headers.get('X-Routed-Via')
+    if route:response_meta['routed_via']=redact(route,self.key)[:256]
     if r.status_code>=400:
      detail=error_detail(r,self.key)
      recoverable=r.status_code==400 and ('tool_use_failed' in detail or ('tool' in detail.lower() and any(v in detail.lower() for v in ['not in request.tools','unknown tool','not a valid tool','invalid tool name'])))
      hint='Check provider model access and request schema.'
      if recoverable:hint='Provider rejected generated tool call; same-model correction attempted up to twice.'
      elif 'model' in detail.lower() and any(v in detail.lower() for v in ['not found','invalid','decommission','does not exist']):hint='Select an accessible same-provider model with --model after checking entitlement. Start a separate benchmark.'
-     self.trace.append({'transport':transport_meta,'request':copy.deepcopy(body),'error':{'http_status':r.status_code,'detail':detail},'retry_count':retry,'recovery_policy':'same-model tool-error correction, maximum 2 retries','latency_ms':(time.perf_counter()-started)*1000})
+     self.trace.append({**response_meta,'transport':transport_meta,'request':copy.deepcopy(body),'error':{'http_status':r.status_code,'detail':detail},'retry_count':retry,'recovery_policy':'same-model tool-error correction, maximum 2 retries','latency_ms':(time.perf_counter()-started)*1000})
      if recoverable and retry<2:
       note=('Valid function tools are: '+', '.join(names)+'. Do not invent or call json/python or any other tool. Return tool calls only using these names, or return the final answer as content.') if names else 'No tools are available in this request. Return the requested JSON as plain assistant content, not a json/python tool call.'
       body['messages']=cleaned+[{'role':'system','content':note}]
       continue
      raise RuntimeError(f"Model HTTP {r.status_code} at {transport_meta['endpoint']} | model={self.model} | {detail} | {hint} | retries={retry}; stopped")
-    response=r.json();message=response['choices'][0]['message']
+    response=r.json()
+    actual_model=response.get('model') if isinstance(response,dict) else None
+    if isinstance(actual_model,str) and actual_model:response_meta['response_model']=redact(actual_model,self.key)[:256]
+    message=response['choices'][0]['message']
     if not isinstance(message,dict):raise TypeError('Assistant message must be an object')
-    self.trace.append({'transport':transport_meta,'request':copy.deepcopy(body),'response':response,'retry_count':retry,'recovery_policy':'same-model tool-error correction, maximum 2 retries','latency_ms':(time.perf_counter()-started)*1000});return message
+    self.trace.append({**response_meta,'transport':transport_meta,'request':copy.deepcopy(body),'response':response,'retry_count':retry,'recovery_policy':'same-model tool-error correction, maximum 2 retries','latency_ms':(time.perf_counter()-started)*1000});return message
    except (httpx.HTTPError,ValueError,KeyError,IndexError,TypeError) as exc:
     kind=type(exc).__name__;category='transport' if isinstance(exc,httpx.HTTPError) else 'response_schema'
     # Do not retain exception strings: they may contain credential-bearing URLs or raw bodies.
-    self.trace.append({'transport':transport_meta,'request':copy.deepcopy(body),'error':{'category':category,'exception_type':kind,'cause_type':type(exc.__cause__).__name__ if exc.__cause__ else None,'detail':'Provider request failed before a validated assistant message was obtained.'},'retry_count':retry,'recovery_policy':'no retry for transport or response schema failure','latency_ms':(time.perf_counter()-started)*1000})
+    self.trace.append({**response_meta,'transport':transport_meta,'request':copy.deepcopy(body),'error':{'category':category,'exception_type':kind,'cause_type':type(exc.__cause__).__name__ if exc.__cause__ else None,'detail':'Provider request failed before a validated assistant message was obtained.'},'retry_count':retry,'recovery_policy':'no retry for transport or response schema failure','latency_ms':(time.perf_counter()-started)*1000})
     raise RuntimeError('Model '+category+' failure ('+kind+'); no retry for this error. Inspect failed request trace.') from exc
  def json(self,system,value):
   content=self.complete([{'role':'system','content':system},{'role':'user','content':json.dumps(value)}],json_output=True)['content']
