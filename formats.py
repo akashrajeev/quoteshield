@@ -29,6 +29,7 @@ def extract(data,format):
  raise ValueError('Unsupported fixture format; PDF/DOCX require a dedicated parser')
 
 
+FIREWALL_SCAN_LIMIT=32768  # the firewall only scans/passes the first 32768 characters; longer uploads are refused, never truncated
 UPLOAD_FORMATS=('txt','md','html','csv','pdf','docx')
 DOC_UPLOAD_FORMATS=('pdf','docx')
 UPLOAD_REFUSED_FORMATS=('png','jpg','jpeg','webp')  # offered by the uploader only so the explicit OCR-not-supported refusal is shown
@@ -37,12 +38,17 @@ def upload_text(filename,data):
  name=str(filename or '');ext=name.rsplit('.',1)[-1].lower() if '.' in name else ''
  if ext in DOC_UPLOAD_FORMATS or ext in UPLOAD_REFUSED_FORMATS:
   from extractors_doc import extract_document
-  return extract_document(name,data)
+  return _within_scan_limit(extract_document(name,data))
  if ext not in UPLOAD_FORMATS:raise ValueError('Unsupported file type. Upload '+', '.join('.'+f for f in UPLOAD_FORMATS)+' only. Images are not supported (no OCR yet) and other formats are not parsed.')
  if not isinstance(data,(bytes,bytearray)):raise ValueError('Upload must be raw bytes.')
  try:text=extract(bytes(data),ext)
  except UnicodeDecodeError:raise ValueError('File is not valid UTF-8 text.')
  if not text.strip():raise ValueError('No text could be extracted from this file.'+(' CSV extraction keeps only the vendor, price_usd, delivery_days, warranty_months, support and notes columns.' if ext=='csv' else ''))
+ return _within_scan_limit(text)
+
+def _within_scan_limit(text):
+ """Fail closed: extracted text longer than the firewall scan window is refused, not truncated, so no tail is left unscanned."""
+ if len(text)>FIREWALL_SCAN_LIMIT:raise ValueError('Extracted text is %d characters; the firewall scans at most %d. File refused, nothing was truncated or passed on unscanned.'%(len(text),FIREWALL_SCAN_LIMIT))
  return text
 
 def judge_artifact(payload='',task='',upload=None):
