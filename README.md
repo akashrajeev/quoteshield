@@ -274,3 +274,10 @@ errors and no model fallback. Exhaustion remains an error, not a pass. Report bo
 first-attempt and recovered outcomes; these recovered runs are not zero-retry
 baseline measurements. Old "no automatic retry" descriptions refer to other errors
 and are superseded only for this narrowly identified generated-tool failure.
+
+
+## Optional: image OCR (not yet wired into the UI)
+
+`extractors_image.py` reads text from PNG/JPEG/WebP uploads with the Tesseract OCR binary (best effort, **not a security guarantee**: OCR can miss or garble text, so an injected instruction can survive unnoticed). It needs Tesseract on the machine; nothing is bundled and no Python package for it is required (Pillow already comes with Streamlit).
+
+Windows: install Tesseract from the UB Mannheim build at https://github.com/UB-Mannheim/tesseract/wiki, then either add the folder containing `tesseract.exe` to `PATH`, or set the environment variable `SHIELD_TESSERACT_PATH` to the full path of `tesseract.exe`, and restart. If Tesseract cannot be found, image uploads are refused with an explicit "OCR is not installed" message; they are never treated as clean. Limits: 5 MB, 20 megapixels, 20 s per image, English only. Verified so far with synthetic fixtures on Linux; real Windows-machine verification is pending.
