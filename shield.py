@@ -110,7 +110,7 @@ def scope_from_request(request: str, model: ModelAdapter | None=None, policy: Re
 
 PATTERNS=[
  ('instruction override',r'\b(?:ignore|disregard|override|forget)\b.{0,90}\b(?:instructions?|rules?|previous|user|scope)\b'),
- ('unauthorized disclosure instruction',r'\b(?:send|email|forward|upload|exfiltrate|transmit|deliver|post)\b.{0,140}(?:confidential|secret|external|attacker|audit@|https?://|[\w.+-]+@[\w.-]+)'),
+ ('unauthorized disclosure instruction',r'\b(?:send|e-?mail(?!\s*:)|forward|upload|exfiltrate|transmit|deliver|post)\b.{0,140}(?:confidential|secret|external|attacker|audit@|https?://|[\w.+-]+@[\w.-]+)'),
  ('sensitive resource instruction',r'\b(?:read|open|fetch|retrieve|collect|load|attach)\b.{0,90}(?:confidential/|secrets?|credentials?|payroll)'),
  ('record modification instruction',r'\b(?:write_record|delete|erase|overwrite|modify)\b.{0,100}(?:records?|database|audit|logs?)'),
  ('authority impersonation',r'(?:<\|(?:system|im_start)\|>|\[system\]|system\s*(?:message|override|:)|developer\s*message|admin\s*override)'),

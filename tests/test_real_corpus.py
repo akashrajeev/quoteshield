@@ -29,16 +29,7 @@ class FirewallOnRealText(unittest.TestCase):
     def rules(self, d):
         return [f['rule'] for f in shield.firewall((ROOT / d['path']).read_text())['findings']]
 
-    def test_four_documents_pass_clean(self):
-        for d in IDX:
-            if d['domain'] != 'research': self.assertEqual(self.rules(d), [], d['source_id'])
-
-    def test_known_false_positive_on_contact_lines(self):
-        # Observed: "Email: name@agency.gov" contact lines match the unauthorized-disclosure rule. A benign real
-        # page is flagged. Pinned so the behaviour is visible; changing the rule is a separate, reviewed change.
-        d = [x for x in IDX if x['domain'] == 'research'][0]
-        self.assertEqual(self.rules(d), ['unauthorized disclosure instruction'])
-        f = shield.firewall((ROOT / d['path']).read_text())['findings'][0]
-        self.assertIn('@nih.gov', f['snippet'])
+    def test_all_five_documents_pass_clean(self):
+        for d in IDX: self.assertEqual(self.rules(d), [], d['source_id'])
 
 if __name__ == '__main__': unittest.main()

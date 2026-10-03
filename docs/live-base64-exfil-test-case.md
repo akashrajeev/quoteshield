@@ -33,3 +33,5 @@ Status: one recorded live run plus an offline, deterministic reproduction of the
 - In the task box, raw plain-text exfiltration wording without override phrasing passes stage 1 on purpose, because "email the result to buyer@acme.example" is a normal task. The encoded-view rule is narrower because a task prompt hiding an instruction inside a blob is not normal. Plain text then relies on scope, the action guard and the taint rule.
 - The optional local classifier was not enabled in this run. Its numbers carry the usual caveat (dev and fixture smoke checks, whole-document only, two false positives).
 - A single run on one model cannot show how often a model complies. It shows what each stage did in this run.
+
+Version note: the disclosure rule was later narrowed (contact labels no longer match; "E-mail" now does). Numbers from before that change are not comparable with later ones, and the classifier numbers above predate it.
