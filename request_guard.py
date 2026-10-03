@@ -19,6 +19,9 @@ import os, re, unicodedata
 STRIPPED_RULES = ('instruction override', 'authority impersonation')  # checked after negated clauses are removed
 RAW_RULES = ('covert execution request',)  # checked on the full text: "do not tell" is the signal itself
 ENCODED_ONLY_RULES = ('unauthorized disclosure instruction', 'sensitive resource instruction')  # decoded base64/hex/ROT13 views only
+# Decoded views only (anything that is not the raw text): an instruction to drop or replace the user's task.
+# Raw text keeps the narrow rule set, so 'ignore the typo in section 2' is never flagged.
+DECODED_ONLY = (('task override instruction', r'\b(?:ignore|disregard|forget|skip|drop|abandon|bypass)\b\s+(?:all\s+|any\s+|the\s+|your\s+|this\s+|that\s+|my\s+|previous\s+|prior\s+|original\s+|current\s+)+(?:[\w-]+\s+){0,3}?(?:requests?|tasks?|instructions?|questions?|queries|query|tickets?|jobs?|briefs?|assignments?)\b'),)
 NEGATED = re.compile(r"(?i)\b(?:do not|don.t|never|must not|should not|shouldn.t|cannot|can.t)\b[^.;!?\n]*")
 
 class RequestNeedsConfirmation(ValueError):
@@ -40,6 +43,11 @@ def check(request, classifier=None):
  for label, value in shield.decode_views(request):
   stripped = NEGATED.sub(' ', value)
   encoded = any(k in label for k in ('base64', 'hex', 'ROT13'))
+  if any(k in label for k in ('base64', 'hex', 'ROT13', 'URL', 'escapes')):
+   for name, pattern in DECODED_ONLY:
+    m = re.search(pattern, stripped, re.I | re.S)
+    if m and name not in [f['rule'] for f in findings]:
+     findings.append({'rule': name, 'encoding': label, 'snippet': m[0][:180]})
   for name, pattern in shield.PATTERNS:
    # Inside a base64/hex/ROT13 view the disclosure and sensitive-read rules also apply: a task prompt that
    # hides an instruction to read a secret or send data out is not a normal task. Raw text keeps the
