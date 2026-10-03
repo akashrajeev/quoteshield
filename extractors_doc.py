@@ -1,6 +1,6 @@
 """Best-effort text extraction for PDF and DOCX uploads. Images are refused (no OCR in this version). Output feeds the firewall as UNTRUSTED text.
 Not layout fidelity, not a security guarantee. Anything unsupported fails loudly; nothing is silently skipped."""
-import io,re,zipfile
+import io,re,zipfile,zlib
 import xml.etree.ElementTree as ET
 
 MAX_BYTES=5*1024*1024;MAX_TEXT=65536;MAX_PDF_PAGES=20
@@ -19,7 +19,6 @@ def _cap(parts,label):
 def extract_pdf(data):
  try:from pypdf import PdfReader
  except ImportError:_fail('PDF support needs the pypdf package.')
- from pypdf.errors import PyPdfError
  try:
   reader=PdfReader(io.BytesIO(data))
   if reader.is_encrypted:_fail('Encrypted PDFs are not supported.')
@@ -48,8 +47,9 @@ def extract_pdf(data):
     for key,label in [('/Contents','annotation'),('/V','form field')]:
      value=annot.get(key)
      if value not in (None,'') and str(value).strip():parts.append('[pdf %s p%d] %s'%(label,number,value))
-  if not page_text:_fail('PDF has no text layer (scanned PDF). Page OCR is not supported; upload the page as an image instead.')
- except PyPdfError as exc:_fail('Corrupt or unreadable PDF: '+str(exc)[:120])
+  if not page_text:_fail('PDF has no text layer (scanned PDF). Page OCR is not supported in this version, so the PDF was refused.')
+ except ValueError:raise
+ except Exception as exc:_fail('Corrupt or unreadable PDF ('+type(exc).__name__+').')
  return _cap(parts,'PDF')
 
 def _xml_text(root):
@@ -63,9 +63,15 @@ def _xml_text(root):
   if line.strip():out.append(line)
  return out
 
+def _member_xml(z,name):
+ """Read and parse one DOCX part; every read/parse failure becomes a bounded ValueError."""
+ try:return ET.fromstring(z.read(name))
+ except ET.ParseError:_fail('Corrupt DOCX part (invalid XML): '+name[:80])
+ except (zipfile.BadZipFile,zlib.error,NotImplementedError,RuntimeError,EOFError,OSError,KeyError):_fail('Corrupt or unsupported DOCX part: '+name[:80])
+
 def extract_docx(data):
  try:z=zipfile.ZipFile(io.BytesIO(data))
- except zipfile.BadZipFile:_fail('Not a valid DOCX (zip) file.')
+ except (zipfile.BadZipFile,OSError,EOFError):_fail('Not a valid DOCX (zip) file.')
  infos=z.infolist()
  if len(infos)>MAX_DOCX_ENTRIES:_fail('DOCX has too many parts.')
  if sum(i.file_size for i in infos)>MAX_DOCX_TOTAL or any(i.file_size>MAX_DOCX_MEMBER for i in infos if i.filename.endswith('.xml')):_fail('DOCX is too large when unpacked.')
@@ -75,22 +81,18 @@ def extract_docx(data):
  if any(i.flag_bits&1 for i in infos):_fail('Encrypted DOCX is not supported.')
  parts=[]
  def read(name,label):
-  try:root=ET.fromstring(z.read(name))
-  except ET.ParseError:_fail('Corrupt DOCX part: '+name)
+  root=_member_xml(z,name)
   lines=_xml_text(root)
   if lines:parts.append('[docx %s]\n'%label+'\n'.join(lines))
   return root
- read('word/document.xml','body')
+ body=read('word/document.xml','body')
  for n in sorted(names):
   m=re.fullmatch(r'word/(header\d*|footer\d*|footnotes|endnotes|comments)\.xml',n)
   if m:read(n,m.group(1))
- for n in sorted(names):
-  if n=='docProps/core.xml':
-   root=ET.fromstring(z.read(n))
-   for el in root:
-    if el.text and el.text.strip():parts.append('[docx metadata %s] %s'%(el.tag.rsplit('}',1)[-1],el.text.strip()))
- root=ET.fromstring(z.read('word/document.xml'))
- for el in root.iter():
+ if 'docProps/core.xml' in names:
+  for el in _member_xml(z,'docProps/core.xml'):
+   if el.text and el.text.strip():parts.append('[docx metadata %s] %s'%(el.tag.rsplit('}',1)[-1],el.text.strip()))
+ for el in body.iter():
   if el.tag.endswith('}docPr'):
    for key in ('descr','title'):
     if el.get(key):parts.append('[docx image %s] %s'%(key,el.get(key)))
