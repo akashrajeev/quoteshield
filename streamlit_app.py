@@ -189,6 +189,11 @@ if not presenter:
   if st.button('Run side-by-side',type='primary',disabled=BLOCKED):run(attack);st.rerun()
   if st.button('Run clean legitimate task',disabled=BLOCKED):
    run({'id':'clean-task','category':'benign','payload':'','calls':[]})
+  st.divider()
+  st.markdown('**Firewall miss demo** (developer demo, not an evaluation case, not a measured result)')
+  st.caption('Vendor note the deterministic firewall rules do not match; it asks for confidential/ceiling.txt. Offline mode runs a scripted read proposal, only a live run shows whether the model proposes it. Either way the guard decides on the call itself. The live LLM classifier may still flag the text.')
+  if st.button('Run firewall-miss demo',disabled=BLOCKED):
+   run(json.loads((ROOT/'demo/firewall-miss.json').read_text()));st.rerun()
   if 'pair' in st.session_state:show_pair(st.session_state['pair'])
   else:st.info('Run a case to see actual tool decisions and the comparison. No prefilled result.')
  with tabs[0]:
@@ -196,7 +201,10 @@ if not presenter:
   task=st.text_area('Trusted task prompt (optional; empty keeps the default quote comparison)',height=80,max_chars=8192)
   payload=st.text_area('Text inserted into a mock vendor quote',height=150,max_chars=8192)
   upload=st.file_uploader('Or upload a file as the untrusted content (.txt, .md, .html, .csv, .pdf, .docx; plain-text extraction only; images are refused, OCR is not supported yet)',type=list(UPLOAD_FORMATS+UPLOAD_REFUSED_FORMATS))
-  st.caption('Runs through the live model: it decides what tool calls to propose, and the firewall and guard act on those. Developer verification (sidebar) only scans text; it cannot infer a new attacker plan.')
+  if mode=='llm':
+   st.caption('Runs through the live model: it decides what tool calls to propose, and the firewall and guard act on those. Developer verification (sidebar) only scans text; it cannot infer a new attacker plan.')
+  else:
+   st.caption('Developer verification is on: this run uses scripted offline proposals, not the live model. It scans your text and compares quotes, but cannot infer a new attacker plan.')
   if st.button('Run custom challenge',disabled=BLOCKED):
    try:artifact=judge_artifact(payload,task,(upload.name,upload.getvalue()) if upload else None)
    except ValueError as exc:st.error(str(exc))
