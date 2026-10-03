@@ -29,21 +29,37 @@ def extract(data,format):
  raise ValueError('Unsupported fixture format; PDF/DOCX require a dedicated parser')
 
 
-UPLOAD_FORMATS=('txt','md','html','csv')
+FIREWALL_SCAN_LIMIT=32768  # the firewall only scans/passes the first 32768 characters; longer uploads are refused, never truncated
+UPLOAD_FORMATS=('txt','md','html','csv','pdf','docx')
+DOC_UPLOAD_FORMATS=('pdf','docx')
+UPLOAD_REFUSED_FORMATS=('png','jpg','jpeg','webp')  # offered by the uploader only so the explicit OCR-not-supported refusal is shown
 def upload_text(filename,data):
- """Plain-text extraction of one uploaded file for the Judge Challenge slot. No layout, OCR or office parsing."""
+ """Plain-text extraction of one uploaded file for the Judge Challenge slot. No layout fidelity and no OCR. PDF/DOCX go through extractors_doc; images are refused."""
  name=str(filename or '');ext=name.rsplit('.',1)[-1].lower() if '.' in name else ''
- if ext not in UPLOAD_FORMATS:raise ValueError('Unsupported file type. Upload '+', '.join('.'+f for f in UPLOAD_FORMATS)+' only; PDF, DOCX and other formats are not parsed.')
+ if ext in DOC_UPLOAD_FORMATS or ext in UPLOAD_REFUSED_FORMATS:
+  from extractors_doc import extract_document
+  return _within_scan_limit(extract_document(name,data))
+ if ext not in UPLOAD_FORMATS:raise ValueError('Unsupported file type. Upload '+', '.join('.'+f for f in UPLOAD_FORMATS)+' only. Images are not supported (no OCR yet) and other formats are not parsed.')
  if not isinstance(data,(bytes,bytearray)):raise ValueError('Upload must be raw bytes.')
  try:text=extract(bytes(data),ext)
  except UnicodeDecodeError:raise ValueError('File is not valid UTF-8 text.')
  if not text.strip():raise ValueError('No text could be extracted from this file.'+(' CSV extraction keeps only the vendor, price_usd, delivery_days, warranty_months, support and notes columns.' if ext=='csv' else ''))
+ return _within_scan_limit(text)
+
+def _within_scan_limit(text):
+ """Fail closed on the FULL source the firewall will see: the existing Beacon quote + a joining newline + the payload.
+ Anything past FIREWALL_SCAN_LIMIT would be dropped unscanned, so the upload is refused instead of truncated."""
+ from shield import QUOTES
+ total=len(QUOTES['quotes/beacon.txt'])+1+len(text)
+ if total>FIREWALL_SCAN_LIMIT:
+  room=max(FIREWALL_SCAN_LIMIT-len(QUOTES['quotes/beacon.txt'])-1,0)
+  raise ValueError('Combined source is %d characters (existing Beacon quote + joining newline + your %d); the firewall scans at most %d, so at most %d characters of upload text fit. Refused; nothing was truncated or passed on unscanned.'%(total,len(text),FIREWALL_SCAN_LIMIT,room))
  return text
 
 def judge_artifact(payload='',task='',upload=None):
  """Build the Judge Challenge artifact. upload is (filename,bytes) or None. An empty task keeps the default trusted request."""
  if upload is not None and payload.strip():raise ValueError('Use either the text box or a file, not both.')
- text=upload_text(*upload) if upload is not None else payload
+ text=upload_text(*upload) if upload is not None else _within_scan_limit(payload)
  artifact={'id':'judge-custom','payload':text,'calls':[]}
  if task.strip():
   if len(task)>8192:raise ValueError('Task exceeds the 8192 character limit.')

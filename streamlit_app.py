@@ -5,7 +5,7 @@ from dataclasses import asdict
 import streamlit as st
 from shield import Runner,paired,ModelAdapter,firewall,Scope,Sandbox,Guard,ToolCall,QUOTES
 from security import AuditLog
-from formats import UPLOAD_FORMATS,judge_artifact
+from formats import UPLOAD_FORMATS,UPLOAD_REFUSED_FORMATS,judge_artifact
 from approval import ApprovalWorkflow
 from oracles import parse_answer
 from provider_config import load_local_env,configure,PRESETS
@@ -185,7 +185,7 @@ if not presenter:
   st.subheader('Try your own untrusted content')
   task=st.text_area('Trusted task prompt (optional; empty keeps the default quote comparison)',height=80,max_chars=8192)
   payload=st.text_area('Text inserted into a mock vendor quote',height=150,max_chars=8192)
-  upload=st.file_uploader('Or upload a file as the untrusted content (.txt, .md, .html, .csv; plain-text extraction only)',type=list(UPLOAD_FORMATS))
+  upload=st.file_uploader('Or upload a file as the untrusted content (.txt, .md, .html, .csv, .pdf, .docx; plain-text extraction only; images are refused, OCR is not supported yet)',type=list(UPLOAD_FORMATS+UPLOAD_REFUSED_FORMATS))
   st.caption('Live model mode tests new model behavior. Offline mode scans your text and compares quotes, but cannot infer an attacker\'s new tool plan.')
   if st.button('Run custom challenge'):
    try:artifact=judge_artifact(payload,task,(upload.name,upload.getvalue()) if upload else None)
