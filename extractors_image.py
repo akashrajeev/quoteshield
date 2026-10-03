@@ -28,12 +28,14 @@ def extract_image(filename,data):
  if len(data)>MAX_BYTES:_fail('Image exceeds the 5 MB limit.')
  try:from PIL import Image
  except ImportError:_fail('Image support needs the Pillow package (installed with Streamlit).')
+ try:img=Image.open(io.BytesIO(data))  # header only; pixels are not decoded yet
+ except Exception:_fail('Corrupt or unsupported image.')
+ if img.format not in ('PNG','JPEG','WEBP'):_fail('Only PNG, JPEG and WebP images are supported.')
+ if img.width*img.height>MAX_PIXELS:_fail('Image exceeds the 20 megapixel limit.')  # checked BEFORE verify()/load()
  try:
   Image.open(io.BytesIO(data)).verify();img=Image.open(io.BytesIO(data))
   img.load()
  except Exception:_fail('Corrupt or unsupported image.')
- if img.format not in ('PNG','JPEG','WEBP'):_fail('Only PNG, JPEG and WebP images are supported.')
- if img.width*img.height>MAX_PIXELS:_fail('Image exceeds the 20 megapixel limit.')
  parts=[]
  for key,value in (getattr(img,'text',None) or {}).items():
   if str(value).strip():parts.append('[image metadata %s] %s'%(key,value))
