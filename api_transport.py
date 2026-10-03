@@ -31,7 +31,7 @@ class ModelAdapter:
  def available(self):return bool(self.url and self.model)
  def before_attempt(self):
   """Budget/pacing hook called before EVERY network attempt, including recovery."""
- def complete(self,messages,tools=None):
+ def complete(self,messages,tools=None,json_output=False):
   import httpx
   if not self.available:raise RuntimeError('Configure SHIELD_MODEL_URL and SHIELD_MODEL_NAME for genuine model execution.')
   allowed={'role','content','name','tool_calls','tool_call_id','function_call','extra_content'}
@@ -49,6 +49,10 @@ class ModelAdapter:
     if tool.get('type')!='function' or not fn.get('name') or fn.get('parameters',{}).get('type')!='object':raise RuntimeError('Invalid OpenAI function tool schema')
     names.append(fn['name'])
    body.update(tools=tools,tool_choice='auto')
+   if parsed.hostname=='api.groq.com' and self.model.startswith('openai/gpt-oss-'):
+    body['parallel_tool_calls']=False
+  if parsed.hostname=='api.groq.com' and not tools and json_output:
+   body.update(tool_choice='none',response_format={'type':'json_object'})
   headers={'Content-Type':'application/json'}
   if self.key:headers['Authorization']='Bearer '+self.key
   for retry in range(3):
@@ -72,6 +76,6 @@ class ModelAdapter:
     self.trace.append({'request':copy.deepcopy(body),'response':response,'retry_count':retry,'recovery_policy':'same-model tool-error correction, maximum 2 retries','latency_ms':(time.perf_counter()-started)*1000});return message
    except (httpx.HTTPError,ValueError,KeyError,IndexError) as exc:raise RuntimeError('Model transport or response schema failed; no retry for this error') from exc
  def json(self,system,value):
-  content=self.complete([{'role':'system','content':system},{'role':'user','content':json.dumps(value)}])['content']
+  content=self.complete([{'role':'system','content':system},{'role':'user','content':json.dumps(value)}],json_output=True)['content']
   try:return json.loads(re.sub(r'^```(?:json)?\s*|\s*```$','',content.strip()))
   except Exception as e:raise RuntimeError('Model returned invalid structured JSON') from e

@@ -35,3 +35,12 @@ class TransportTests(unittest.TestCase):
   with patch.dict(os.environ,{'SHIELD_MODEL_URL':'https://api.groq.com/openai/v1/chat/completions','SHIELD_MODEL_NAME':'fixture'}),patch('httpx.post',return_value=httpx.Response(400,json={'error':{'code':'tool_use_failed'}})) as post:
    with self.assertRaisesRegex(RuntimeError,'request limit'):BudgetModel({'remaining':1}).complete([])
    self.assertEqual(post.call_count,1)
+
+ def test_groq_json_only_explicit_none_and_json_object(self):
+  with patch.dict(os.environ,{'SHIELD_MODEL_URL':'https://api.groq.com/openai/v1/chat/completions','SHIELD_MODEL_NAME':'openai/gpt-oss-120b'}),patch('httpx.post',return_value=httpx.Response(200,json={'choices':[{'message':{'role':'assistant','content':'{}'}}]})) as post:
+   m=ModelAdapter();self.assertEqual(m.json('JSON only',{}),{})
+   body=post.call_args.kwargs['json'];self.assertEqual(body['tool_choice'],'none');self.assertEqual(body['response_format'],{'type':'json_object'});self.assertNotIn('tools',body)
+ def test_groq_tools_never_receive_response_format(self):
+  with patch.dict(os.environ,{'SHIELD_MODEL_URL':'https://api.groq.com/openai/v1/chat/completions','SHIELD_MODEL_NAME':'openai/gpt-oss-120b'}),patch('httpx.post',return_value=httpx.Response(200,json={'choices':[{'message':{'role':'assistant','content':'ok'}}]})) as post:
+   ModelAdapter().complete([], [{'type':'function','function':{'name':'read_file','parameters':{'type':'object'}}}],json_output=True)
+   body=post.call_args.kwargs['json'];self.assertEqual(body['tool_choice'],'auto');self.assertNotIn('response_format',body);self.assertFalse(body['parallel_tool_calls'])
