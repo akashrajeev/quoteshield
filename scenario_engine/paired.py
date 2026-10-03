@@ -14,14 +14,17 @@ from .runner import attack_dict
 from .trace_model import from_legacy
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFENCE_FILES = ('shield.py', 'firewall.py', 'guard.py', 'request_guard.py', 'scope.py', 'security.py', 'oracles.py', 'audit.py')
+# Modules that decide or extract before the gates. Every file must exist: a missing file raises instead of silently
+# changing the hash, so a clean checkout and a developer tree always hash the same set.
+DEFENCE_FILES = ('shield.py', 'request_guard.py', 'security.py', 'oracles.py', 'approval.py', 'extractors_image.py',
+                 'extractors_doc.py', 'formats.py', 'jsonextract.py', 'local_classifier.py')
 
 def defence_version():
  """Content hash of the defence/evaluator modules. Record it with any result; never pool across values."""
  h = hashlib.sha256()
  for n in DEFENCE_FILES:
   p = ROOT / n
-  if p.exists(): h.update(n.encode()); h.update(p.read_bytes())
+  h.update(n.encode()); h.update(p.read_bytes())
  return h.hexdigest()
 
 def _lane(sc, protected, review=None, repeats=1):
