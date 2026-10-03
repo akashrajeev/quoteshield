@@ -1,0 +1,70 @@
+{
+ "note": "Real public documents used as benign host text for DEV fixtures. sha256 is a source fingerprint of the stored file, not the audit chain. No injected content is stored here. sha256 and bytes are over the file content with trailing newlines removed.",
+ "documents": [
+  {
+   "source_id": "hr-annual-leave",
+   "domain": "hr",
+   "title": "OPM Annual Leave fact sheet",
+   "path": "corpus/real/hr-annual-leave.txt",
+   "origin_url": "https://www.opm.gov/policy-data-oversight/pay-leave/leave-administration/fact-sheets/annual-leave/",
+   "retrieved_at": "2026-10-04T01:06:30+05:30",
+   "sha256": "7958e9a9b0fa45b21554b1101d11b7c81aeb8ac3c942025b74ee6e1b939d27dc",
+   "bytes": 16752,
+   "truncated_to_first_20000_chars": false,
+   "content_type": "text/plain",
+   "license_note": "US federal government web content. Treated as public-domain government work; no per-page license check was made. Text is the fetched page text, not the original HTML. Used only as a benign host document."
+  },
+  {
+   "source_id": "finance-irs-recordkeeping",
+   "domain": "finance",
+   "title": "IRS Topic no. 305, Recordkeeping",
+   "path": "corpus/real/finance-irs-recordkeeping.txt",
+   "origin_url": "https://www.irs.gov/taxtopics/tc305",
+   "retrieved_at": "2026-10-04T01:06:30+05:30",
+   "sha256": "b7f3dca9ccf2f6c75d3fb4f6f7caa6fb18900f785e7b3f8d3c856e8c8d96b841",
+   "bytes": 2853,
+   "truncated_to_first_20000_chars": false,
+   "content_type": "text/plain",
+   "license_note": "US federal government web content. Treated as public-domain government work; no per-page license check was made. Text is the fetched page text, not the original HTML. Used only as a benign host document."
+  },
+  {
+   "source_id": "customer_support-ftc-mail-order-rule",
+   "domain": "customer_support",
+   "title": "FTC Business Guide to the Mail, Internet, or Telephone Order Merchandise Rule",
+   "path": "corpus/real/customer_support-ftc-mail-order-rule.txt",
+   "origin_url": "https://www.ftc.gov/business-guidance/resources/business-guide-ftcs-mail-internet-or-telephone-order-merchandise-rule",
+   "retrieved_at": "2026-10-04T01:06:30+05:30",
+   "sha256": "d75b919fb5887ec6c6e81ee9aebab5d7111ca8d4c84fd50e58ba010ef705dd2b",
+   "bytes": 19859,
+   "truncated_to_first_20000_chars": true,
+   "content_type": "text/plain",
+   "license_note": "US federal government web content. Treated as public-domain government work; no per-page license check was made. Text is the fetched page text, not the original HTML. Used only as a benign host document."
+  },
+  {
+   "source_id": "research-nih-data-sharing",
+   "domain": "research",
+   "title": "NIH Scientific Data Sharing: Policies and Access to Data",
+   "path": "corpus/real/research-nih-data-sharing.txt",
+   "origin_url": "https://sharing.nih.gov/data-management-and-sharing-policy/about-data-management-sharing-policy/data-management-and-sharing-policy-overview",
+   "retrieved_at": "2026-10-04T01:06:30+05:30",
+   "sha256": "912cb8d9dcd6ab23dc94a764b4f2dea296ff0190ab8c733507f4cb1c540f99f7",
+   "bytes": 2142,
+   "truncated_to_first_20000_chars": false,
+   "content_type": "text/plain",
+   "license_note": "US federal government web content. Treated as public-domain government work; no per-page license check was made. Text is the fetched page text, not the original HTML. Used only as a benign host document."
+  },
+  {
+   "source_id": "procurement-far-13-003",
+   "domain": "procurement",
+   "title": "FAR 13.003 Policy (simplified acquisition)",
+   "path": "corpus/real/procurement-far-13-003.txt",
+   "origin_url": "https://www.acquisition.gov/far/13.003",
+   "retrieved_at": "2026-10-04T01:06:30+05:30",
+   "sha256": "6e2f9ef2467c05eb8b789e5683ed72f1f6d9d6b636b90edb1aceb71c0d49ba12",
+   "bytes": 4805,
+   "truncated_to_first_20000_chars": false,
+   "content_type": "text/plain",
+   "license_note": "US federal government web content. Treated as public-domain government work; no per-page license check was made. Text is the fetched page text, not the original HTML. Used only as a benign host document."
+  }
+ ]
+}
