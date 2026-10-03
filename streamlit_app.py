@@ -44,7 +44,6 @@ with st.sidebar:
  mode,BLOCK_REASON=resolve_mode(LIVE_OK,dev_offline)
  BLOCKED=BLOCK_REASON is not None
  if BLOCKED:st.error(BLOCK_REASON)
- elif mode=='offline':st.warning('Developer verification is on: runs use scripted offline proposals, not the live model.')
  st.caption('Reserved cases are not exposed in the selector. Existing reserved suite is author-generated, not independent.')
  if st.button('Reset session'):
   for k in ['pair','human','challenge','clean_result','clean_error','pair_error']:st.session_state.pop(k,None)
