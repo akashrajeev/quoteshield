@@ -21,6 +21,9 @@ def render(t, title=None, mode_note=None):
  if mode_note: st.caption(mode_note)
  b = t['blocked_at']
  st.markdown(''.join(_pill(s, b['stage'] if b else None) for s in t['stages']), unsafe_allow_html=True)
+ if t.get('findings'):
+  st.markdown('**Prompt classification (from the request guard)**')
+  for f in t['findings']: st.write('- %s (found in the %s view): "%s"' % (f['rule'], f['encoding'], str(f.get('snippet', ''))[:140]))
  if b: st.error('Stopped at stage %d of %d: %s (%s)' % (b['position'], b['of'], b['label'], b['rule']))
  elif t.get('waiting_for_human'): st.warning('Waiting for a person to approve the exact call. Nothing has been sent.')
  else: st.success('No stage stopped this run.')
@@ -36,3 +39,22 @@ def render(t, title=None, mode_note=None):
    st.write(s['explanation'])
    st.json({k: s[k] for k in ('stage', 'status', 'rule', 'events')})
  st.caption('Depth is a label for this one run. It is not a detection rate and is not averaged or compared across runs or versions.')
+
+
+def comparison_rows(items):
+ """items: [(title, trace)]. One row per run; each row describes that run only."""
+ rows = []
+ for title, t in items:
+  b = t['blocked_at']
+  rows.append({'Scenario': title, 'Stopped at': ('%d/%d %s' % (b['position'], b['of'], b['label'])) if b else ('waiting for a person' if t.get('waiting_for_human') else 'not stopped'),
+               'Rule': (b or {}).get('rule') or '', 'Tool executed': 'yes' if t['effect_executed'] else 'no',
+               'Stages with events': t['stages_with_events']})
+ return rows
+
+def depth_bars(items):
+ """Plain text bar per run: how far the run got before it was stopped. Descriptive, not a rate."""
+ out = []
+ for title, t in items:
+  b = t['blocked_at']; n = b['position'] if b else len(trace.ORDER)
+  out.append('%-62s %s%s  %s' % (title[:62], '#' * n, '.' * (len(trace.ORDER) - n), ('stopped at ' + b['label']) if b else 'not stopped'))
+ return '\n'.join(out)
