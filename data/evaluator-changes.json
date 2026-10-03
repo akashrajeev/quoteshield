@@ -7,6 +7,14 @@
       "reason": "Expected keys were canonicalized but observed answer keys were not, incorrectly rejecting equivalent typed aliases.",
       "behavior": "Canonicalize both sides using existing aliases; reject conflicting aliases and duplicate vendor rows; no prose inference.",
       "evidence": "Synthetic canonical/alias/conflict/duplicate tests; no sealed input used."
+    },
+    {
+      "id": "2026-10-03-protected-scope-prompt",
+      "commit_sha": "d6bda591e3b77c2703e3dc35479f85074c1aee54",
+      "scope": "protected scope extraction prompt and candidate bounds; no evaluator scoring or guard intersection changes",
+      "reason": "Synthetic extractor with compare/omitted read_file caused authorized quote reads to fail closed; reported clean live run failed, exact user trace not yet available.",
+      "behavior": "Specify valid tool names and read_file for named quote comparison; include deterministic candidate bounds; retain existing intersections and invalid-schema fail-closed behavior. Add clean-result scope/audit/model trace export.",
+      "evidence": "94 synthetic/unit tests and nine presenter paths passed; no real provider or sealed payload validation; pre-freeze and pre independent held-out run."
     }
   ]
 }
