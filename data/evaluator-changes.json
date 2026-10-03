@@ -46,6 +46,13 @@
       "scope": "Baseline-only extracted ToolCall constructor and provider trace metadata; no defence/scoring changes",
       "behavior": "Restore @dataclass on extracted ToolCall. Prior baseline-only tools failed construction, so earlier bundle real/fixture rows do not establish efficacy or orchestration. Main shield ToolCall/paired app unaffected by this extraction bug. Add fixture assertions for all three actual reads and executed tool events. Primary trace/error adds sanitized scheme/hostname/path plus auth scheme/presence, excluding query/userinfo/key.",
       "evidence": "99 tests pass; extracted REV3.2 all20 fixture cases each execute3 quote reads. No new provider or sealed input validation."
+    },
+    {
+      "id": "2026-10-03-gemini-preset-current",
+      "commit_sha": "126d700ad6d7af203180133d64eb35abced81b72",
+      "scope": "Primary Gemini preset/example/docs only; explicit user model overrides unchanged",
+      "behavior": "Default gemini-3.8-flash from current official OpenAI-compatible function-calling example. New-user gemini2.5 access rejection reported by owner via parent; model-list presence alone did not prove generation access. No automatic model substitution.",
+      "evidence": "Official https://ai.google.dev/gemini-api/docs/openai ; primary tests pass. Baseline REV3.2 remains exact separate code/config protocol; explicit --model override needed there. No request-body/defence/scoring changes."
     }
   ]
 }
