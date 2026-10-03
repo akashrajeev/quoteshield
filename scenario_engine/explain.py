@@ -87,6 +87,12 @@ def explain_run(result=None, request_check=None, request=None, lane=None):
    skipped.append(key); continue
   ev = ['stage=%s' % key, 'status=%s' % st['status']] + (['rule=%s' % st['rule']] if st['rule'] else []) + ['audit#%s' % n for n in st['events']]
   g.append(_s('%s %s - %s. %s' % (cp, st['label'], st['status'], st['explanation']), *ev))
+  if key == 'scope':
+   _sc = [e for e in audit if e.get('stage') == 'scope']
+   _ct = [e for e in audit if e.get('stage') == 'content']
+   if _sc and _ct and _sc[0]['sequence'] < _ct[0]['sequence']:
+    g.append(_s('The scope was fixed at audit#%s, before the first document was ingested (audit#%s). Text inside a document arrives after that point, so it cannot widen the scope.' % (_sc[0]['sequence'], _ct[0]['sequence']),
+                'audit#%s scope/%s' % (_sc[0]['sequence'], _sc[0]['decision']), 'audit#%s content/%s' % (_ct[0]['sequence'], _ct[0]['decision'])))
   if key == 'prompt_guard' and findings:
    for f in findings:
     g.append(_s('The request guard matched "%s" in the %s view of the task (matched text: "%s").' % (f['rule'], f['encoding'], _clip(f.get('snippet', ''), 120)),
