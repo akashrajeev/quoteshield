@@ -235,3 +235,14 @@ The URL must end in `/v1`, not `/chat/completions`; the runner/app append the la
 template. Blank base URL values fall back to the corresponding hosted default.
 Never send hosted keys to an untrusted custom server. Restart Streamlit after
 editing `.env` so the new environment is loaded.
+
+## Developer baseline lane (DEV attacks only)
+
+`python local_runner.py --lane baseline --suite dev-attacks --provider groq --max-requests 160 --rpm 2`
+runs all 20 developer attacks, unprotected only. `--repeats 3` runs 60 case/repeat
+records; there is no deterministic seed guarantee. `--resume OUTPUT_FOLDER` skips
+both existing completed and existing error records, processing only never-recorded
+cases with identical model/code/corpus/repeats. It does not retry errors. Request cap
+is per invocation, so a resumed run can spend additional quota. The standalone
+`baseline_dev` extraction contains no defence imports. Sealed/benign suites are not
+accepted by this lane. Trace/config/effects/error JSON and a ZIP are produced.

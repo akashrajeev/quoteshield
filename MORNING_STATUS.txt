@@ -40,8 +40,8 @@ availability validation, a strict request budget and a return ZIP. Run it locall
 with your own securely supplied provider credentials.
 
 Collaborators
-Adith reported sealed cases hash c4cee170794cd95604b6e7a8d3ae6fdd001be9e185dd5eef264d7c8368c5c48f:
-10 attacks plus 5 controls. IDs and agreed control semantics recorded, payloads unopened.
+Adith reported sealed cases hash 7752a5db28c41121cb8c01b7b9bc78f25a2922e3b3016d124d70da697036b962:
+15 attacks plus 5 controls, revised before release (old seal superseded, never opened). IDs and agreed control semantics recorded, payloads unopened.
 Abindas reported benign suite hash c460e904750682fbb0ca040357c4f3f9810bb23c46a31a85939cfb6966206aa3:
 18 cases, 12 no-review / 3 required / 3 clarification. Schema-only details and IDs received; evaluator adapters aligned with whole-file fixtures,
 permitted effect rules and adith/abindas namespacing. Prose utility still requires blind review. Neither corpus file/hash locally verified yet.

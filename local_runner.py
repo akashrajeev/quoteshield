@@ -43,6 +43,13 @@ def run_suite(provider,output,max_requests=20,case_limit=2,model_factory=None):
  return report,archive
 
 def main():
+ if "--lane" in sys.argv:
+  load_local_env()
+  import runpy
+  base=Path(__file__).parent/"baseline_dev"
+  sys.path.insert(0,str(base))
+  runpy.run_path(str(base/"local_runner.py"),run_name="__main__")
+  return
  p=argparse.ArgumentParser(description='Local development subset runner. Four OpenAI-compatible providers, .env or hidden key prompt.')
  p.add_argument('--provider',choices=[*PRESETS,'fixture']);p.add_argument('--model');p.add_argument('--max-requests',type=int,default=20);p.add_argument('--case-limit',type=int,default=2);p.add_argument('--output');p.add_argument('--rpm',type=float,default=2,help='Maximum request pace; use a value within your provider limit')
  a=p.parse_args();load_local_env();a.provider=a.provider or os.environ.get("SHIELD_PROVIDER","groq")

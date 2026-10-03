@@ -55,7 +55,7 @@ Status: deterministic guard VERIFIED; scope model UNRUN; provenance limited as a
 D4 JSON audit + 25-30 attacks / five categories / dev-unseen / 15-20 benign
 BUILT: data/attacks.json (30, five categories, 20 dev/10 reserved), existing 20 benign content variants; data/benign-tasks.json (20 cases, ten task shapes); evaluate.py/ablate.py/oracles.py/metrics.py; raw artifact folders.
 VERIFIED: existing full offline suite, task-shaped offline suite, six-mode plumbing and fact attribution tests.
-MISSING: independently unseen evaluation and genuine model numbers. Original reserved cases have already been inspected/executed; they are author-generated reserved, not independent. Collaborator claims sealed 10 attacks + 5 controls; its reported hash/IDs are recorded but original file has not been received or verified. freeze.py/heldout.py must be used only after real model/config are fixed.
+MISSING: independently unseen evaluation and genuine model numbers. Original reserved cases have already been inspected/executed; they are author-generated reserved, not independent. Collaborator reports revised sealed 15 attacks + 5 controls; its reported hash/IDs are recorded but original file has not been received or verified. freeze.py/heldout.py must be used only after real model/config are fixed.
 
 D5 Streamlit side-by-side / selector / live audit / confirmation / results
 BUILT: streamlit_app.py primary UI; Arena, Judge Challenge, X-ray, Audit, Results, Human review. Custom UI remains fallback.
