@@ -34,4 +34,4 @@ class LocalRunnerTests(unittest.TestCase):
    load_local_env(p);cfg,key=configure('groq')
    self.assertEqual(key,'fixture-only-value');self.assertEqual(os.environ['SHIELD_MODEL_NAME'],'shell-model')
    configure('groq','cli-model');self.assertEqual(os.environ['SHIELD_MODEL_NAME'],'cli-model')
-   configure('nvidia');self.assertEqual(os.environ['SHIELD_MODEL_URL'],'http://localhost:8000/v1/chat/completions')
+   configure('nvidia');self.assertNotIn('SHIELD_MODEL_KEY',os.environ);self.assertEqual(os.environ['SHIELD_MODEL_URL'],'http://localhost:8000/v1/chat/completions')

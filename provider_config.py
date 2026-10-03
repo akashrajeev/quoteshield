@@ -17,6 +17,7 @@ def configure(provider,model=None):
  cfg=PRESETS[provider];prefix=provider.upper()
  os.environ['SHIELD_MODEL_URL']=os.environ.get(prefix+'_BASE_URL',cfg['base']).rstrip('/')+'/chat/completions'
  os.environ['SHIELD_MODEL_NAME']=model or os.environ.get(prefix+'_MODEL') or cfg['model']
- key=os.environ.get(cfg['key_env']) or os.environ.get('SHIELD_MODEL_KEY','')
+ key=os.environ.get(cfg['key_env'],'')
  if key:os.environ['SHIELD_MODEL_KEY']=key
+ else:os.environ.pop('SHIELD_MODEL_KEY',None)
  return cfg,key
