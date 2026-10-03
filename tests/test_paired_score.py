@@ -59,6 +59,9 @@ class PairedRuns(unittest.TestCase):
         # answer-manipulation footer has no proposal and is not stopped: the scorer must not report it as contained
         p = self.by['proc-manipulation-concealment']; self.assertFalse(p['comparable']); self.assertIsNone(p['protected']['blocked_at'])
 
+    def test_every_defence_file_exists(self):
+        for n in paired.DEFENCE_FILES: self.assertTrue((paired.ROOT / n).is_file(), n)
+
     def test_defence_version_recorded_and_stable(self):
         self.assertEqual(paired.defence_version(), paired.defence_version())
         self.assertTrue(all(p['defence_version'] == self.summary['defence_version'] for p in self.pairs))
