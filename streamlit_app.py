@@ -69,7 +69,7 @@ def run(artifact):
    request=artifact.get('request', __import__('shield').DEFAULT_REQUEST)
    for lane,protected in [('baseline',False),('protected',True)]:
     active_lane=lane;lane_starts[lane]=len(runner.model.trace)
-    partial[lane]=runner.run(request,artifact,protected,mode,event_sink=lambda e,lane=lane:sink(lane,e))
+    partial[lane]=runner.run(request,artifact,protected,mode,event_sink=lambda e,lane=lane:sink(lane,e),request_confirmed=bool(artifact.get('request_confirmed')))
    result={**partial,'label':'LLM agent run' if mode=='llm' else 'Offline adversarial tool-proposal verification'}
   pipeline.caption('Execution complete. Scope, firewall and guard decisions are recorded; the agent result and mock effects are captured. Human review appears only when requested.')
   st.session_state['pair']=result;st.session_state['challenge']=artifact
@@ -207,7 +207,15 @@ if not presenter:
   if st.button('Run custom challenge',disabled=BLOCKED):
    try:artifact=judge_artifact(payload,task,(upload.name,upload.getvalue()) if upload else None)
    except ValueError as exc:st.error(str(exc))
-   else:run(artifact)
+   else:
+    try:run(artifact)
+    except __import__('request_guard').RequestNeedsConfirmation as exc:
+     st.session_state['needs_confirm']={'artifact':artifact,'message':str(exc),'findings':exc.result['findings']}
+  if 'needs_confirm' in st.session_state:
+   pending=st.session_state['needs_confirm']
+   st.warning(pending['message']);st.json(pending['findings'])
+   if st.button('Confirm and run this task'):
+    st.session_state.pop('needs_confirm');run({**pending['artifact'],'request_confirmed':True})
  with tabs[2]:
   st.subheader('Read the source boundary')
   active=st.session_state.get('challenge',attack)

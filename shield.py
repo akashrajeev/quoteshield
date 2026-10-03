@@ -44,7 +44,7 @@ POLICY_PATH='vendors/cedar-security-policy.txt'
 KNOWN_RESOURCES=set(QUOTES)|{POLICY_PATH}
 
 from api_transport import ModelAdapter,route_summary
-import local_classifier
+import local_classifier,request_guard
 
 def scope_from_request(request: str, model: ModelAdapter | None=None) -> Scope:
  """Only authenticated request enters this function. LLM cannot widen capabilities."""
@@ -224,12 +224,14 @@ class GraphState(TypedDict,total=False):
 
 class Runner:
  def __init__(self,model=None): self.model=model or ModelAdapter()
- def run(self,request=DEFAULT_REQUEST,attack=None,protected=True,mode='offline',event_sink=None,defence=None,reviewer=None,clean_presenter_final=False):
+ def run(self,request=DEFAULT_REQUEST,attack=None,protected=True,mode='offline',event_sink=None,defence=None,reviewer=None,clean_presenter_final=False,request_confirmed=False):
   if mode=='llm' and not self.model.available: raise RuntimeError('LLM configuration missing. Offline verification is not a model benchmark.')
   defence=defence or ('full' if protected else 'none')
   if len(request)>8192:raise ValueError('User request exceeds local task limit')
   if defence not in ['none','prompt','keyword','firewall','guard','full']:raise ValueError('Invalid defence mode')
   use_guard=defence in ['guard','full'];use_firewall=defence in ['firewall','full'];spec=(attack or {}).get('task_spec',{'operation':'compare'})
+  request_check=request_guard.check(request) if use_guard and request_guard.enabled() else None
+  if request_check and request_check['flagged'] and not request_confirmed:raise request_guard.RequestNeedsConfirmation(request_check)
   trace_start=len(self.model.trace) if hasattr(self.model,'trace') else 0
   begin=time.perf_counter();attack=attack or {};sb=Sandbox(attack.get('payload','') if attack.get('injection_surface','quote')=='quote' else '',attack.get('tool_payload',attack.get('payload','')) if attack.get('injection_surface') in ['search_output','tool_error'] else attack.get('tool_payload',''),attack.get('source_path','quotes/beacon.txt'),attack.get('injection_surface')=='tool_error',attack.get('fixtures',[]))
   timing={'scope_ms':0.0,'firewall_ms':0.0,'guard_ms':0.0,'agent_ms':0.0};log=AuditLog(event_sink);audit=log.entries;inspections=[]
@@ -238,6 +240,7 @@ class Runner:
   event_run_id=uuid.uuid4().hex[:10];suite=attack.get('suite','local');case_id=attack.get('id','interactive')
   def event(stage,verdict,reason,rule,**kwargs):
    log.append({'suite':suite,'case_id':case_id,'run_id':event_run_id,'stage':stage,'decision':verdict,'reason':reason,'rule':rule,**kwargs})
+  if request_check:event('request','CONFIRMED' if request_check['flagged'] else 'PASS','User request checked before the scope contract.' if not request_check['flagged'] else 'User confirmed a flagged request.','request_guard',findings=request_check['findings'])
   event('scope','READY','Trusted user task parsed before any source access.','scope_contract',scope=asdict(scope),latency_ms=timing['scope_ms'])
   def invoke(call):
    tick=time.perf_counter()
