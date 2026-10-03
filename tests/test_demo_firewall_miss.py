@@ -49,6 +49,23 @@ class DemoButton(unittest.TestCase):
   with mock.patch.dict(os.environ,{k:'' for k in ['SHIELD_PROVIDER','SHIELD_MODEL_URL','SHIELD_MODEL_NAME','SHIELD_MODEL_KEY']}),mock.patch('dotenv.load_dotenv',lambda *a,**k:False):
    at=AppTest.from_file(str(ROOT/'streamlit_app.py'),default_timeout=90).run()
    self.assertTrue(any('not a measured result' in m.value for m in at.markdown))
+   self.assertTrue([b for b in at.button if b.label=='Run firewall-miss demo'][0].disabled)  # no live model: blocked, never silently offline
+   [x for x in at.sidebar.toggle if x.label=='Offline guard verification'][0].set_value(True).run()
    [b for b in at.button if b.label=='Run firewall-miss demo'][0].click().run()
    self.assertFalse(at.exception)
    self.assertTrue(any('Offline adversarial tool-proposal verification' in c.value for c in at.caption))
+
+class JudgeCaption(unittest.TestCase):
+ def _captions(self,env,offline):
+  from streamlit.testing.v1 import AppTest
+  with mock.patch.dict(os.environ,env),mock.patch('dotenv.load_dotenv',lambda *a,**k:False):
+   at=AppTest.from_file(str(ROOT/'streamlit_app.py'),default_timeout=90).run()
+   if offline:[x for x in at.sidebar.toggle if x.label=='Offline guard verification'][0].set_value(True).run()
+   return ' || '.join(c.value for c in at.caption)
+ def test_live_caption_hidden_when_offline_is_on(self):
+  blank={k:'' for k in ['SHIELD_PROVIDER','SHIELD_MODEL_URL','SHIELD_MODEL_NAME','SHIELD_MODEL_KEY']}
+  live={**blank,'SHIELD_MODEL_URL':'http://127.0.0.1:31415/v1/chat/completions','SHIELD_MODEL_NAME':'m'}
+  off=self._captions(blank,True)
+  self.assertNotIn('Runs through the live model',off);self.assertIn('Developer verification is on: this run uses scripted offline proposals',off)
+  on=self._captions(live,False)
+  self.assertIn('Runs through the live model',on);self.assertNotIn('Developer verification is on',on)
