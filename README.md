@@ -306,3 +306,10 @@ still applies. This block is for the paired app, not the baseline-only CLI.
 
 Sources: https://docs.ollama.com/api/openai-compatibility and
 https://docs.ollama.com/capabilities/thinking .
+
+Local Ollama tool-free scope/classifier calls additionally request
+`response_format={"type":"json_object"}`. This helps syntax compliance but does
+not guarantee the required fields. A returned JSON array/scalar fails closed
+with a clear object-schema error; it is never converted into permissions or
+silently retried. Planner tool calls do not receive response_format. Record
+this request shape for new runs rather than pooling with older runs.

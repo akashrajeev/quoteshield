@@ -16,3 +16,22 @@ class OllamaTests(unittest.TestCase):
   for url in ['https://example.test/v1/chat/completions','http://localhost:8500/v1/chat/completions','http://localhost:11434/other/chat/completions','http://localhost.evil.example:11434/v1/chat/completions']:
    b=self.body(url);self.assertNotIn('reasoning_effort',b);self.assertEqual(b['tool_choice'],'auto')
 if __name__=='__main__':unittest.main()
+
+class OllamaJsonShapeTests(unittest.TestCase):
+ def test_exact_qwen_scope_array_fails_closed_no_retry(self):
+  from shield import Runner
+  response={'choices':[{'message':{'role':'assistant','content':'[["read_file","quotes/atlas.txt"],["read_file","quotes/beacon.txt"],["read_file","quotes/cedar.txt"]]'}}]}
+  with patch.dict(os.environ,{'SHIELD_MODEL_URL':'http://localhost:11434/v1/chat/completions','SHIELD_MODEL_NAME':'qwen2.5:3b','SHIELD_MODEL_KEY':''}),patch('httpx.post',return_value=httpx.Response(200,json=response)) as post:
+   model=ModelAdapter()
+   with self.assertRaisesRegex(RuntimeError,'expected an object'):Runner(model).run(mode='llm')
+   self.assertEqual(post.call_count,1);body=post.call_args.kwargs['json'];self.assertEqual(body['response_format'],{'type':'json_object'});self.assertNotIn('tools',body);self.assertNotIn('tool_choice',body);self.assertEqual(len(model.trace),1)
+ def test_scope_object_remains_intersected(self):
+  import json
+  from shield import scope_from_request,DEFAULT_REQUEST,QUOTES
+  response={'choices':[{'message':{'content':json.dumps({'tools':['read_file','send_email'],'resources':list(QUOTES)+['confidential/ceiling.txt'],'recipients':['evil@example.test'],'record_keys':[],'web_urls':[]})}}]}
+  with patch.dict(os.environ,{'SHIELD_MODEL_URL':'http://localhost:11434/v1/chat/completions','SHIELD_MODEL_NAME':'qwen2.5:3b','SHIELD_MODEL_KEY':''}),patch('httpx.post',return_value=httpx.Response(200,json=response)):
+   scope=scope_from_request(DEFAULT_REQUEST,ModelAdapter());self.assertEqual(scope.tools,['read_file']);self.assertEqual(scope.resources,list(QUOTES));self.assertEqual(scope.recipients,[])
+ def test_tool_calls_keep_json_string_arguments_and_no_response_format(self):
+  response={'choices':[{'message':{'role':'assistant','content':'','tool_calls':[{'id':'call_1','type':'function','function':{'name':'read_file','arguments':'{"path":"quotes/atlas.txt"}'}}]}}]}
+  with patch.dict(os.environ,{'SHIELD_MODEL_URL':'http://localhost:11434/v1/chat/completions','SHIELD_MODEL_NAME':'qwen2.5:3b','SHIELD_MODEL_KEY':''}),patch('httpx.post',return_value=httpx.Response(200,json=response)) as post:
+   result=ModelAdapter().complete([],TOOLS);self.assertEqual(result,response['choices'][0]['message']);self.assertNotIn('response_format',post.call_args.kwargs['json'])

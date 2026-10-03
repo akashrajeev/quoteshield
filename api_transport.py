@@ -55,6 +55,7 @@ class ModelAdapter:
    if not local_ollama:body['tool_choice']='auto'
    if parsed.hostname=='api.groq.com' and self.model.startswith('openai/gpt-oss-'):
     body['parallel_tool_calls']=False
+  if local_ollama and not tools and json_output:body['response_format']={'type':'json_object'}
   if parsed.hostname=='api.groq.com' and not tools and json_output:
    body.update(tool_choice='none',response_format={'type':'json_object'})
   headers={'Content-Type':'application/json'}
@@ -81,5 +82,9 @@ class ModelAdapter:
    except (httpx.HTTPError,ValueError,KeyError,IndexError) as exc:raise RuntimeError('Model transport or response schema failed; no retry for this error') from exc
  def json(self,system,value):
   content=self.complete([{'role':'system','content':system},{'role':'user','content':json.dumps(value)}],json_output=True)['content']
-  try:return json.loads(re.sub(r'^```(?:json)?\s*|\s*```$','',content.strip()))
+  try:
+   parsed=json.loads(re.sub(r'^```(?:json)?\s*|\s*```$','',content.strip()))
+   if not isinstance(parsed,dict):raise RuntimeError('Model returned invalid structured JSON: expected an object; run stopped')
+   return parsed
+  except RuntimeError:raise
   except Exception as e:raise RuntimeError('Model returned invalid structured JSON') from e
