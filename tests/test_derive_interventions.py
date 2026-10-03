@@ -264,6 +264,40 @@ class DeriveInterventions(unittest.TestCase):
         self.assertEqual(di.aggregate([run([ev(1, "action", "ASK HUMAN", "e", call=MAIL), ev(2, "action", "ASK HUMAN", "e", call=MAIL),
                                             ev(3, "human", "DENIED", "h", call=MAIL)])])["intervention_events_by_layer"]["human"], 1)
 
+    def test_two_denial_events_for_one_call_count_twice(self):
+        d = di.derive_run(run([ev(1, "action", "ASK HUMAN", "e", call=MAIL), ev(2, "human", "DENIED", "h", call=MAIL),
+                               ev(3, "action", "ASK HUMAN", "e", call=MAIL), ev(4, "human", "DENIED", "h", call=MAIL)]))
+        humans = [i for i in d["interventions"] if i["layer"] == "human"]
+        self.assertEqual([sorted(h["evidence_refs"]) for h in humans], [[1, 2], [3, 4]])
+        self.assertEqual(d["paused_for_human"], [])
+        self.assertEqual(len(d["call_final_denials"]), 1)
+        self.assertEqual(sorted(d["call_final_denials"][0]["evidence_refs"]), [3, 4])
+
+    def test_denial_then_unresolved_ask_is_not_final_containment(self):
+        d = di.derive_run(run([ev(1, "action", "ASK HUMAN", "e", call=MAIL), ev(2, "human", "DENIED", "h", call=MAIL),
+                               ev(3, "action", "ASK HUMAN", "e", call=MAIL)]))
+        self.assertEqual(len([i for i in d["interventions"] if i["layer"] == "human"]), 1)
+        self.assertEqual(d["paused_for_human"][0]["evidence_refs"], [3])
+        self.assertEqual(d["call_final_denials"], [])
+        self.assertEqual(d["contained_by"], {"status": "unknown"})
+
+    def test_denial_then_approval_is_not_final_denial(self):
+        d = di.derive_run(run([ev(1, "action", "ASK HUMAN", "e", call=MAIL), ev(2, "human", "DENIED", "h", call=MAIL),
+                               ev(3, "action", "ASK HUMAN", "e", call=MAIL), ev(4, "human", "APPROVED", "h", call=MAIL)]))
+        self.assertEqual(len([i for i in d["interventions"] if i["layer"] == "human"]), 1)
+        self.assertEqual(len(d["human_reviewed_approved"]), 1)
+        self.assertEqual(d["call_final_denials"], [])
+
+    def test_aggregate_counts_each_actual_denial(self):
+        r = run([ev(1, "action", "ASK HUMAN", "e", call=MAIL), ev(2, "human", "DENIED", "h", call=MAIL),
+                 ev(3, "action", "ASK HUMAN", "e", call=MAIL), ev(4, "human", "DENIED", "h", call=MAIL)])
+        self.assertEqual(di.aggregate([r])["intervention_events_by_layer"]["human"], 2)
+
+    def test_orphan_human_decision_is_counted_with_warning(self):
+        d = di.derive_run(run([ev(1, "human", "DENIED", "h", call=MAIL)]))
+        self.assertEqual(len([i for i in d["interventions"] if i["layer"] == "human"]), 1)
+        self.assertTrue(any("no preceding ASK" in w for w in d["warnings"]))
+
     def test_ask_human_after_the_decision_is_paused_again(self):
         d = di.derive_run(run([ev(1, "action", "ASK HUMAN", "e", call=MAIL), ev(2, "human", "DENIED", "h", call=MAIL),
                                ev(3, "action", "ASK HUMAN", "e", call=MAIL)]))
