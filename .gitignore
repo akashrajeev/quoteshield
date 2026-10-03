@@ -21,3 +21,7 @@ artifacts/held-out-*/
 
 !.env.example
 results-*/
+
+quoteshield-baseline-dev-rev*/
+.env
+.venv/
