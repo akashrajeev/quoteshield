@@ -169,17 +169,12 @@ def derive_run(result):
     insp_ok = False
     interventions, paused, reviewed, final_denials = [], [], [], []
     detected_by, warnings = [], []
+    candidates = {}
     if audit is None:
         problems.append(problem)
         out["audit_status"] = "unknown"
     else:
         out["audit_status"] = "ok"
-        allowed_later = {}
-        for e in audit:
-            if e["stage"] == "action" and e["decision"] == "ALLOW":
-                k = _call_key(e)
-                if k:
-                    allowed_later.setdefault(k, []).append(e["sequence"])
         for e in audit:
             seq, stage, dec, rule = e["sequence"], e["stage"], e["decision"], e.get("rule")
             if stage == "content" and dec in ("SANITIZE", "QUARANTINE"):
@@ -207,9 +202,7 @@ def derive_run(result):
                 elif layer == "unknown":
                     warnings.append(f"audit seq {seq}: BLOCK without a string rule; layer unknown, no final-denial claim")
                 else:
-                    later = [s for s in allowed_later.get(k, []) if s > seq]
-                    if not later and not _executed(e["call"], result):
-                        final_denials.append({"layer": layer, "rule": rule, "call": e["call"], "evidence_refs": [seq]})
+                    candidates[(k, seq)] = {"layer": layer, "rule": rule, "call": e["call"], "evidence_refs": [seq]}
             elif stage == "action" and dec == "ASK HUMAN":
                 pass  # grouped per exact call after this loop
             elif stage == "action" and dec not in ("ALLOW",):
@@ -240,6 +233,7 @@ def derive_run(result):
                     last_record = None
                     continue
                 refs = pending_asks + [e["sequence"]]
+                had_asks = bool(pending_asks)
                 if not pending_asks:
                     warnings.append(f"audit seq {e['sequence']}: human decision with no preceding ASK HUMAN for this call")
                 pending_asks = []
@@ -249,17 +243,29 @@ def derive_run(result):
                 elif e["decision"] == "DENIED":
                     interventions.append({"layer": "human", "event": "denied", "rule": e.get("rule"), "call": call,
                                           "evidence_refs": refs})
-                    last_record = {"layer": "human", "rule": e.get("rule"), "call": call, "evidence_refs": refs,
-                                   "after": e["sequence"]}
+                    valid = bool(had_asks) and isinstance(e.get("rule"), str) and bool(e.get("rule"))
+                    if valid:
+                        candidates[(k, e["sequence"])] = {"layer": "human", "rule": e["rule"], "call": call, "evidence_refs": refs}
+                    else:
+                        warnings.append(f"audit seq {e['sequence']}: DENIED lacks a valid rule or an identifiable preceding ASK HUMAN; counted as an observed denial, no final-denial claim")
+                    last_record = None
                 else:
                     warnings.append(f"audit seq {e['sequence']}: unrecognised human decision {e['decision']!r}")
                     last_record = None
             if pending_asks:
                 paused.append({"call": call, "evidence_refs": pending_asks})
-            if last_record is not None:
-                later_allow = [x for x in allowed_later.get(k, []) if x > last_record["after"]]
-                if not later_allow and not _executed(call, result):
-                    final_denials.append({key: v for key, v in last_record.items() if key != "after"})
+        # Finality, applied the same way to every layer: a denial counts as final only when it is the LAST
+        # recorded event (action decision or human decision) for that exact call, so a later ASK HUMAN,
+        # ALLOW, approval or further block supersedes it, and nothing shows the call executing.
+        last_event = {}
+        for e in audit:
+            if e["stage"] in ("action", "human"):
+                k = _call_key(e)
+                if k is not None:
+                    last_event[k] = e["sequence"]
+        for (k, seq), cand in candidates.items():
+            if last_event.get(k) == seq and not _executed(cand["call"], result):
+                final_denials.append(cand)
         interventions.sort(key=lambda i: min(i["evidence_refs"]))
         # Firewall findings stored in inspections but absent from the audit are kept as separate evidence.
         insp = result.get("inspections")
