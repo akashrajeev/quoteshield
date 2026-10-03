@@ -32,6 +32,13 @@
       "behavior": "Opt-in flag used only by presenter clean button. Empty attack payload/calls, exact quote resources, read-only tools, no recipients/writes/web URLs required. After actual reads, no-tool JSON-object final answer plus audit rule clean_presenter_json_final. Default flag false.",
       "protocol": "No changes to attack, baseline, custom, independent/held-out evaluation paths or scoring. Clean presenter completion is a separate demonstration protocol, not a protected efficacy benchmark.",
       "evidence": "97 tests including enabled/disabled, attack and baseline boundary cases; nine presenter paths. No new real-provider validation or sealed input; pre-freeze."
+    },
+    {
+      "id": "2026-10-03-paired-failure-diagnostics",
+      "commit_sha": "2f831aa949329f691c3aac9a02574ef2c6d5c40f",
+      "scope": "UI failure persistence/trace export and baseline model-list preflight URL only",
+      "behavior": "Persist failing lane, original exception, partial results, actual events and model trace through rerun; display error and download. UI runs the same baseline/protected sequence with same Runner settings. Baseline preflight removes full chat/completions suffix and errors show status+URL.",
+      "evidence": "97 unit tests, nine offline presenter paths, synthetic failing live baseline UI confirmed persistent error and download after rerun. No provider validation; no oracle/defence/benchmark tool exposure changes."
     }
   ]
 }
