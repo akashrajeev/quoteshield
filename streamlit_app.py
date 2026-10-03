@@ -304,6 +304,17 @@ if not presenter:
     if c2.button('Deny',key='trace_no'):
      t2,_r=scenarios.run(name,review=False);st.session_state['trace_view']=(name,t2,None);st.rerun()
     st.caption('Approve once re-runs the scenario with the reviewer saying yes. The guard rechecks the exact call before it is allowed.')
+  st.markdown('---')
+  if st.button('Run all scenarios side by side',key='trace_all'):
+   items=[]
+   for n,s in scenarios.SCENARIOS.items():
+    t,_r=scenarios.run(n);items.append((s['title'],t))
+   st.session_state['trace_all_items']=items
+  if 'trace_all_items' in st.session_state:
+   its=st.session_state['trace_all_items']
+   st.dataframe(trace_ui.comparison_rows(its))
+   st.code(trace_ui.depth_bars(its),language=None)
+   st.caption('Each row describes one run. This is where each attack was stopped, not a detection rate, and it is not averaged or compared across versions.')
   if 'pair' in st.session_state:
    st.markdown('---');st.markdown('**Trace of your last Judge Challenge run (protected lane)**')
    trace_ui.render(trace.build(st.session_state['pair']['protected']))
