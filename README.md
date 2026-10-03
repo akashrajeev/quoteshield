@@ -319,3 +319,10 @@ not guarantee the required fields. A returned JSON array/scalar fails closed
 with a clear object-schema error; it is never converted into permissions or
 silently retried. Planner tool calls do not receive response_format. Record
 this request shape for new runs rather than pooling with older runs.
+
+`SHIELD_MODEL_TIMEOUT_S=180` optionally allows a slower local request more time;
+default remains 45 seconds. It must be positive and finite. The selected timeout
+is recorded as `transport.timeout_s` on successful and failed request attempts.
+Label runs with model, reasoning setting, JSON request shape and timeout; do not
+pool changed configurations. This does not retry a timeout or guarantee that a
+slow model will finish. Both paired lanes use the same setting.

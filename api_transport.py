@@ -1,5 +1,5 @@
 """OpenAI-compatible request diagnostics. No credentials in error text or trace."""
-import json,os,re,time,copy
+import json,os,re,time,copy,math
 from urllib.parse import urlsplit
 
 def redact(text,key=''):
@@ -26,6 +26,9 @@ def error_detail(response,key=''):
 
 class ModelAdapter:
  def __init__(self):
+  try:self.timeout_s=float(os.environ.get('SHIELD_MODEL_TIMEOUT_S','45'))
+  except ValueError:raise ValueError('SHIELD_MODEL_TIMEOUT_S must be a positive finite number of seconds')
+  if not math.isfinite(self.timeout_s) or self.timeout_s<=0:raise ValueError('SHIELD_MODEL_TIMEOUT_S must be a positive finite number of seconds')
   self.url=os.environ.get('SHIELD_MODEL_URL','');self.model=os.environ.get('SHIELD_MODEL_NAME','');self.key=os.environ.get('SHIELD_MODEL_KEY','');self.trace=[];self.calls=0;self.max_calls=64
  @property
  def available(self):return bool(self.url and self.model)
@@ -43,7 +46,7 @@ class ModelAdapter:
   if parsed.hostname=='api.groq.com' and not parsed.path.startswith('/openai/v1/'):raise RuntimeError('Groq OpenAI-compatible URL must use /openai/v1/chat/completions')
   local_ollama=parsed.scheme in ('http','https') and parsed.hostname in ('localhost','127.0.0.1','::1') and parsed.port==11434 and parsed.path=='/v1/chat/completions'
   if local_ollama and os.environ.get('SHIELD_OLLAMA_NO_THINK')=='1':body['reasoning_effort']='none'
-  transport_meta={'endpoint':parsed.scheme+'://'+(parsed.hostname or '')+parsed.path,'auth_scheme':'Bearer' if self.key else 'none','auth_present':bool(self.key)}
+  transport_meta={'endpoint':parsed.scheme+'://'+(parsed.hostname or '')+parsed.path,'auth_scheme':'Bearer' if self.key else 'none','auth_present':bool(self.key),'timeout_s':self.timeout_s}
   names=[]
   if tools:
    tools=copy.deepcopy(tools)
@@ -64,7 +67,7 @@ class ModelAdapter:
    if self.calls>=self.max_calls:raise RuntimeError('Model request budget exhausted')
    self.before_attempt();self.calls+=1;started=time.perf_counter()
    try:
-    r=httpx.post(self.url,json=body,headers=headers,timeout=45)
+    r=httpx.post(self.url,json=body,headers=headers,timeout=self.timeout_s)
     if r.status_code>=400:
      detail=error_detail(r,self.key)
      recoverable=r.status_code==400 and ('tool_use_failed' in detail or ('tool' in detail.lower() and any(v in detail.lower() for v in ['not in request.tools','unknown tool','not a valid tool','invalid tool name'])))

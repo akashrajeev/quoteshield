@@ -67,3 +67,21 @@ class FailedAttemptDiagnosticsTests(unittest.TestCase):
     m=ModelAdapter()
     with self.assertRaisesRegex(RuntimeError,kind):m.complete([])
     self.assertEqual(post.call_count,1);self.assertEqual(m.trace[0]['error']['category'],'response_schema');self.assertEqual(m.trace[0]['error']['exception_type'],kind);self.assertNotIn('secret raw',json.dumps(m.trace))
+
+class RequestTimeoutConfigTests(unittest.TestCase):
+ def test_default_and_override_are_sent_and_traced(self):
+  for value,want in [(None,45),('180',180),('60.5',60.5)]:
+   with patch.dict(os.environ,{'SHIELD_MODEL_URL':'http://localhost:11434/v1/chat/completions','SHIELD_MODEL_NAME':'fixture','SHIELD_MODEL_KEY':''}),patch('httpx.post',return_value=httpx.Response(200,json={'choices':[{'message':{'content':'ok'}}]})) as post:
+    os.environ.pop('SHIELD_MODEL_TIMEOUT_S',None)
+    if value is not None:os.environ['SHIELD_MODEL_TIMEOUT_S']=value
+    m=ModelAdapter();m.complete([]);self.assertEqual(post.call_args.kwargs['timeout'],want);self.assertEqual(m.trace[0]['transport']['timeout_s'],want)
+ def test_invalid_config_rejected(self):
+  for value in ['0','-1','nan','inf','no','']:
+   with self.subTest(value=value),patch.dict(os.environ,{'SHIELD_MODEL_TIMEOUT_S':value}),patch('httpx.post') as post:
+    with self.assertRaisesRegex(ValueError,'positive finite'):ModelAdapter()
+    post.assert_not_called()
+ def test_timeout_failure_records_selected_timeout_no_retry(self):
+  with patch.dict(os.environ,{'SHIELD_MODEL_URL':'http://localhost:11434/v1/chat/completions','SHIELD_MODEL_NAME':'fixture','SHIELD_MODEL_TIMEOUT_S':'180'}),patch('httpx.post',side_effect=httpx.ReadTimeout('timeout')) as post:
+   m=ModelAdapter()
+   with self.assertRaisesRegex(RuntimeError,'ReadTimeout'):m.complete([])
+   self.assertEqual(post.call_count,1);self.assertEqual(m.trace[0]['transport']['timeout_s'],180)
