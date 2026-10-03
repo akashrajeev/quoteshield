@@ -125,3 +125,101 @@ Abindas schema adapter supports `fixtures[].kind=text_fixture` as whole-source r
 ## Interface options
 
 The sidebar Interface control switches between the styled procurement room and Regular Streamlit (dark). Regular mode does not inject custom CSS. The project `.streamlit/config.toml` sets Streamlit's native dark base theme. Browser-level saved Streamlit theme settings can override the native configuration; use Streamlit Settings -> Theme -> Dark if a prior viewer setting selects Light. Changing interface styles keeps the current mock run and approval state. `python verify_dark.py` exercises all six native-dark tabs and verifies switching back to the styled layout.
+
+## Local quickstart (four providers)
+
+Python 3.11+ recommended. Sign into GitHub as the repo owner before cloning this
+private repo (GitHub Desktop, `gh auth login`, or your existing SSH setup).
+
+```bash
+git clone https://github.com/akashrajeev/quoteshield.git
+cd quoteshield
+python -m venv .venv
+# macOS/Linux:
+source .venv/bin/activate
+# Windows PowerShell instead:
+# .\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+```
+
+Optional `.env`: macOS/Linux `cp .env.example .env`; Windows PowerShell
+`Copy-Item .env.example .env`. Edit `.env` locally, set `SHIELD_PROVIDER`, and fill
+only that provider's API key. Empty key fields are intentional placeholders.
+`.env` and `.streamlit/secrets.toml` are ignored; `.env.example` is safe to track.
+Existing shell environment values take precedence over `.env`.
+
+```bash
+python -m streamlit run streamlit_app.py
+```
+
+Open the localhost URL printed by Streamlit. Offline guard verification works with
+no key. To use a real model in the app, configure `.env` and choose Live model in
+the sidebar. The app is interactive and not request-budgeted: use the runner below
+for bounded measurements. All application tools remain mock tools; remote model
+prompts still leave your machine. Streamlit picks the selected provider from `.env`.
+
+Run ONE provider to start, in a second activated terminal:
+
+```bash
+python local_runner.py --provider groq --case-limit 1 --max-requests 20 --rpm 2
+# Alternatives, not commands to run all at once:
+# python local_runner.py --provider gemini --case-limit 1 --max-requests 20 --rpm 2
+# python local_runner.py --provider openrouter --case-limit 1 --max-requests 20 --rpm 2
+# python local_runner.py --provider nvidia --case-limit 1 --max-requests 20 --rpm 2
+```
+
+The runner uses the chosen provider key from `.env` or the environment. If absent,
+it asks at a hidden interactive prompt. Never put a real key in a command or chat.
+`--provider` overrides `SHIELD_PROVIDER`; `--model EXACT_ID` overrides the
+provider's `*_MODEL`. The selected key can access the model only if it appears in
+the current `/models` catalog; otherwise execution stops before chat calls. Catalog
+listing does not guarantee quota, current inference health or tool-call quality.
+There is no paid-model fallback. An invalid/unsupported call or exhausted request
+budget stops early, preserves misses/partial results, and does not retry.
+
+Defaults:
+
+| Provider | Model | Base URL |
+| --- | --- | --- |
+| Gemini | `gemini-2.5-flash` | `https://generativelanguage.googleapis.com/v1beta/openai` |
+| Groq | `openai/gpt-oss-120b` | `https://api.groq.com/openai/v1` |
+| OpenRouter | `nvidia/nemotron-3.5-lightning:free` | `https://openrouter.ai/api/v1` |
+| NVIDIA hosted NIM | `nvidia/llama-3.1-nemotron-nano-8b-v1` | `https://integrate.api.nvidia.com/v1` |
+
+Presets are starting points, not benchmarked recommendations. OpenRouter default
+was observed in its public models API with tools support and zero prompt/completion
+pricing on 3 October 2026. Free variants rotate, have capacity/rate limits, and may
+require account eligibility. Never remove `:free` to get around a failure unless
+you separately approve that paid model. NVIDIA API access may use trial credits or
+paid entitlement; hosted NIM is not a promise of unlimited free inference. Gemini
+and Groq quotas depend on project/account/model. Set billing limits and confirm
+current plan terms yourself before execution; `--max-requests` caps chat request
+count, not dollars. `--rpm` limits this process, not usage from other clients.
+Optional `*_BASE_URL` overrides support your own OpenAI-compatible endpoint,
+including `NVIDIA_BASE_URL=http://localhost:8000/v1`. Send keys only to endpoints
+you trust. No local NIM container or GPU installation is attempted by this runner.
+
+It prints a `results-PROVIDER-TIMESTAMP` folder and ZIP. Return that ZIP for review.
+A one-case-per-group run is a development smoke test, not the full problem-statement
+benchmark. It may stop before finishing under the chosen request cap; preserve the
+partial ZIP. Sealed collaborator payloads are never opened by this command.
+
+Key-free smoke test and regression tests:
+
+```bash
+python local_runner.py --provider fixture --case-limit 1
+python -m unittest discover -s tests
+```
+
+The fixture run is explicitly labeled scripted orchestration verification, not an
+LLM result. UI screenshot tests optionally need `requirements-dev.txt`, Playwright
+and a Chrome executable; they are not needed for the normal app/provider run.
+
+Official provider references:
+- https://ai.google.dev/gemini-api/docs/openai
+- https://console.groq.com/docs/models
+- https://openrouter.ai/docs/api/reference/overview
+- https://openrouter.ai/api/v1/models
+- https://openrouter.ai/docs/guides/routing/model-variants/free
+- https://docs.api.nvidia.com/nim/reference/nvidia-llama-3_1-nemotron-nano-8b-v1-infer
+- https://docs.nvidia.com/nim/large-language-models/latest/api-reference.html

@@ -18,3 +18,6 @@ artifacts/held-out-*/
 *.mp4
 *.webm
 *.zip
+
+!.env.example
+results-*/

@@ -3,10 +3,7 @@ import argparse,getpass,hashlib,json,os,sys,time,zipfile
 from pathlib import Path
 from datetime import datetime,timezone
 from shield import Runner,ModelAdapter,DEFAULT_REQUEST
-PRESETS={
- 'gemini':{'model':'gemini-2.5-flash','endpoint':'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions','models_endpoint':'https://generativelanguage.googleapis.com/v1beta/openai/models'},
- 'groq':{'model':'openai/gpt-oss-120b','endpoint':'https://api.groq.com/openai/v1/chat/completions','models_endpoint':'https://api.groq.com/openai/v1/models'}
-}
+from provider_config import PRESETS,load_local_env,configure
 class BudgetModel(ModelAdapter):
  def __init__(self,budget):super().__init__();self.budget=budget
  def complete(self,*args,**kwargs):
@@ -46,9 +43,10 @@ def run_suite(provider,output,max_requests=20,case_limit=2,model_factory=None):
  return report,archive
 
 def main():
- p=argparse.ArgumentParser(description='Single command: python local_runner.py --provider gemini (or groq). Dependencies must already be installed.')
- p.add_argument('--provider',choices=['gemini','groq','fixture'],required=True);p.add_argument('--model');p.add_argument('--max-requests',type=int,default=20);p.add_argument('--case-limit',type=int,default=2);p.add_argument('--output');p.add_argument('--rpm',type=float,default=2,help='Maximum request pace; use a value within your provider limit')
- a=p.parse_args()
+ p=argparse.ArgumentParser(description='Local development subset runner. Four OpenAI-compatible providers, .env or hidden key prompt.')
+ p.add_argument('--provider',choices=[*PRESETS,'fixture']);p.add_argument('--model');p.add_argument('--max-requests',type=int,default=20);p.add_argument('--case-limit',type=int,default=2);p.add_argument('--output');p.add_argument('--rpm',type=float,default=2,help='Maximum request pace; use a value within your provider limit')
+ a=p.parse_args();load_local_env();a.provider=a.provider or os.environ.get("SHIELD_PROVIDER","groq")
+ if a.provider not in [*PRESETS,"fixture"]:p.error("Unknown SHIELD_PROVIDER")
  if not 1<=a.max_requests<=1000 or not 1<=a.case_limit<=20 or not 0<a.rpm<=60:p.error('Invalid budget, case count or rate')
  folder=a.output or 'results-'+a.provider+'-'+datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')
  if a.provider=='fixture':
@@ -56,16 +54,16 @@ def main():
   from tests.fixture_model import FixtureModel
   report,archive=run_suite('fixture',folder,a.max_requests,a.case_limit,FixtureModel)
  else:
-  cfg=PRESETS[a.provider];os.environ['SHIELD_MODEL_URL']=cfg['endpoint'];os.environ['SHIELD_MODEL_NAME']=a.model or cfg['model']
-  if not sys.stdin.isatty():raise RuntimeError('Hidden key prompt requires a local interactive terminal; do not pipe a key')
+  cfg,key=configure(a.provider,a.model)
+  if not key and not sys.stdin.isatty():raise RuntimeError('Set your provider key in local .env or use an interactive hidden prompt; do not pipe a key')
   print('Use a free-tier-only project or an approved paid limit. Mock prompts leave this machine. No retry after quota/error. Preset model must be accessible to your key.')
-  key=getpass.getpass(a.provider.title()+' API key (hidden, not saved): ')
+  key=key or getpass.getpass(a.provider.title()+' API key (hidden, not saved): ')
   if not key:raise ValueError('No key entered')
   os.environ['SHIELD_MODEL_KEY']=key
   try:
    # Validate model access without printing the key or provider error body.
    import httpx
-   try:response=httpx.get(cfg['models_endpoint'],headers={'Authorization':'Bearer '+key},timeout=20)
+   try:response=httpx.get(os.environ['SHIELD_MODEL_URL'].rsplit('/',1)[0]+'/models',headers={'Authorization':'Bearer '+key},timeout=20)
    except httpx.HTTPError:raise RuntimeError('Model-list transport failed; stopped without printing credentials') from None
    if response.status_code!=200:raise RuntimeError(f'Model-list validation returned HTTP {response.status_code}; stopped')
    ids={m['id'] for m in response.json().get('data',[])}

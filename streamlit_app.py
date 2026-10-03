@@ -7,7 +7,11 @@ from shield import paired,ModelAdapter,firewall,Scope,Sandbox,Guard,ToolCall,QUO
 from security import AuditLog
 from approval import ApprovalWorkflow
 from oracles import parse_answer
+from provider_config import load_local_env,configure,PRESETS
+import os
 ROOT=Path(__file__).parent
+load_local_env()
+if os.environ.get("SHIELD_PROVIDER") in PRESETS:configure(os.environ["SHIELD_PROVIDER"])
 st.set_page_config(page_title='QuoteShield | Procurement Room',page_icon='◈',layout='wide')
 appearance=st.sidebar.radio('Interface',['Styled procurement room','Regular Streamlit (dark)'],key='interface_style')
 if appearance=='Styled procurement room':
