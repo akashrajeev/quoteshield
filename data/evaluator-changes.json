@@ -39,6 +39,13 @@
       "scope": "UI failure persistence/trace export and baseline model-list preflight URL only",
       "behavior": "Persist failing lane, original exception, partial results, actual events and model trace through rerun; display error and download. UI runs the same baseline/protected sequence with same Runner settings. Baseline preflight removes full chat/completions suffix and errors show status+URL.",
       "evidence": "97 unit tests, nine offline presenter paths, synthetic failing live baseline UI confirmed persistent error and download after rerun. No provider validation; no oracle/defence/benchmark tool exposure changes."
+    },
+    {
+      "id": "2026-10-03-baseline-dataclass-and-endpoint-diagnostics",
+      "commit_sha": "437b15770fa21a5196fef63375e5ca09d540a6ea",
+      "scope": "Baseline-only extracted ToolCall constructor and provider trace metadata; no defence/scoring changes",
+      "behavior": "Restore @dataclass on extracted ToolCall. Prior baseline-only tools failed construction, so earlier bundle real/fixture rows do not establish efficacy or orchestration. Main shield ToolCall/paired app unaffected by this extraction bug. Add fixture assertions for all three actual reads and executed tool events. Primary trace/error adds sanitized scheme/hostname/path plus auth scheme/presence, excluding query/userinfo/key.",
+      "evidence": "99 tests pass; extracted REV3.2 all20 fixture cases each execute3 quote reads. No new provider or sealed input validation."
     }
   ]
 }
