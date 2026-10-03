@@ -298,6 +298,63 @@ class DeriveInterventions(unittest.TestCase):
         self.assertEqual(len([i for i in d["interventions"] if i["layer"] == "human"]), 1)
         self.assertTrue(any("no preceding ASK" in w for w in d["warnings"]))
 
+    def test_block_then_unresolved_ask_for_same_call_is_never_final_for_any_layer(self):
+        for rule in ("recipient_scope", "argument_schema", "confidential_flow"):
+            d = di.derive_run(run([ev(1, "action", "BLOCK", rule, call=MAIL), ev(2, "action", "ASK HUMAN", "e", call=MAIL)]))
+            self.assertEqual(len(d["interventions"]), 1, rule)
+            self.assertEqual(d["call_final_denials"], [], rule)
+            self.assertEqual(d["contained_by"], {"status": "unknown"}, rule)
+            self.assertEqual(len(d["paused_for_human"]), 1, rule)
+
+    def test_block_for_a_different_call_is_unaffected_by_another_calls_ask(self):
+        d = di.derive_run(run([ev(1, "action", "BLOCK", "recipient_scope", call=MAIL), ev(2, "action", "ASK HUMAN", "e", call=REC)]))
+        self.assertEqual(len(d["call_final_denials"]), 1)
+        self.assertEqual(d["contained_by"]["status"], "call_level_final_denial")
+
+    def test_later_event_of_any_kind_supersedes_an_earlier_denial(self):
+        for later in (ev(3, "action", "ALLOW", "scope_match", call=MAIL),
+                      ev(3, "action", "ASK HUMAN", "e", call=MAIL)):
+            d = di.derive_run(run([ev(1, "action", "BLOCK", "recipient_scope", call=MAIL),
+                                   ev(2, "action", "BLOCK", "confidential_flow", call=MAIL), later]))
+            self.assertEqual(d["call_final_denials"], [])
+
+    def test_only_the_last_denial_of_a_call_is_final(self):
+        d = di.derive_run(run([ev(1, "action", "BLOCK", "recipient_scope", call=MAIL),
+                               ev(2, "action", "BLOCK", "confidential_flow", call=MAIL)]))
+        self.assertEqual(len(d["interventions"]), 2)
+        self.assertEqual(len(d["call_final_denials"]), 1)
+        self.assertEqual(d["call_final_denials"][0]["layer"], "provenance")
+        self.assertEqual(d["call_final_denials"][0]["evidence_refs"], [2])
+
+    def test_block_after_human_denial_is_the_final_one(self):
+        d = di.derive_run(run([ev(1, "action", "ASK HUMAN", "e", call=MAIL), ev(2, "human", "DENIED", "h", call=MAIL),
+                               ev(3, "action", "BLOCK", "recipient_scope", call=MAIL)]))
+        self.assertEqual([f["layer"] for f in d["call_final_denials"]], ["guard"])
+
+    def test_orphan_denied_without_rule_is_counted_but_not_final(self):
+        h = ev(1, "human", "DENIED", None, call=MAIL); del h["rule"]
+        d = di.derive_run(run([h]))
+        self.assertEqual(len([i for i in d["interventions"] if i["layer"] == "human"]), 1)
+        self.assertEqual(d["call_final_denials"], [])
+        self.assertEqual(d["contained_by"], {"status": "unknown"})
+        self.assertTrue(d["warnings"])
+
+    def test_denied_needs_both_a_valid_rule_and_a_preceding_ask_to_be_final(self):
+        cases = {
+            "orphan with rule": [ev(1, "human", "DENIED", "h", call=MAIL)],
+            "ask but missing rule": [ev(1, "action", "ASK HUMAN", "e", call=MAIL), ev(2, "human", "DENIED", None, call=MAIL)],
+            "ask but empty rule": [ev(1, "action", "ASK HUMAN", "e", call=MAIL), ev(2, "human", "DENIED", "", call=MAIL)],
+            "ask but non-string rule": [ev(1, "action", "ASK HUMAN", "e", call=MAIL), ev(2, "human", "DENIED", 7, call=MAIL)],
+        }
+        for name, audit in cases.items():
+            d = di.derive_run(run(audit))
+            self.assertEqual(len([i for i in d["interventions"] if i["layer"] == "human"]), 1, name)
+            self.assertEqual(d["call_final_denials"], [], name)
+            self.assertEqual(d["contained_by"], {"status": "unknown"}, name)
+            self.assertTrue(d["warnings"], name)
+        ok = di.derive_run(run([ev(1, "action", "ASK HUMAN", "e", call=MAIL), ev(2, "human", "DENIED", "h", call=MAIL)]))
+        self.assertEqual(len(ok["call_final_denials"]), 1)
+
     def test_ask_human_after_the_decision_is_paused_again(self):
         d = di.derive_run(run([ev(1, "action", "ASK HUMAN", "e", call=MAIL), ev(2, "human", "DENIED", "h", call=MAIL),
                                ev(3, "action", "ASK HUMAN", "e", call=MAIL)]))
