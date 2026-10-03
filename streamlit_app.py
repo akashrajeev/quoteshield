@@ -180,6 +180,11 @@ if not presenter:
   if st.button('Run side-by-side',type='primary'):run(attack);st.rerun()
   if st.button('Run clean legitimate task'):
    run({'id':'clean-task','category':'benign','payload':'','calls':[]})
+  st.divider()
+  st.markdown('**Firewall miss demo** (developer demo, not an evaluation case, not a measured result)')
+  st.caption('Vendor note the deterministic firewall rules do not match; it asks for confidential/ceiling.txt. Offline mode runs a scripted read proposal, only a live run shows whether the model proposes it. Either way the guard decides on the call itself. The live LLM classifier may still flag the text.')
+  if st.button('Run firewall-miss demo'):
+   run(json.loads((ROOT/'demo/firewall-miss.json').read_text()));st.rerun()
   if 'pair' in st.session_state:show_pair(st.session_state['pair'])
   else:st.info('Run a case to see actual tool decisions and the comparison. No prefilled result.')
  with tabs[1]:
