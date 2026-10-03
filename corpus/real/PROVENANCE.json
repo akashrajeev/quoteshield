@@ -1,0 +1,70 @@
+{
+ "note": "Real public documents used as benign host text for DEV fixtures. sha256 is a source fingerprint of the stored file, not the audit chain. No injected content is stored here.",
+ "documents": [
+  {
+   "source_id": "hr-annual-leave",
+   "domain": "hr",
+   "title": "OPM Annual Leave fact sheet",
+   "path": "corpus/real/hr-annual-leave.txt",
+   "origin_url": "https://www.opm.gov/policy-data-oversight/pay-leave/leave-administration/fact-sheets/annual-leave/",
+   "retrieved_at": "2026-10-04T01:06:30+05:30",
+   "sha256": "22bba4d37850f924544b665b9abaa7ea77428a8cb59e10360bc787d90e1bb19a",
+   "bytes": 16753,
+   "truncated_to_first_20000_chars": false,
+   "content_type": "text/plain",
+   "license_note": "US federal government web content. Treated as public-domain government work; no per-page license check was made. Text is the fetched page text, not the original HTML. Used only as a benign host document."
+  },
+  {
+   "source_id": "finance-irs-recordkeeping",
+   "domain": "finance",
+   "title": "IRS Topic no. 305, Recordkeeping",
+   "path": "corpus/real/finance-irs-recordkeeping.txt",
+   "origin_url": "https://www.irs.gov/taxtopics/tc305",
+   "retrieved_at": "2026-10-04T01:06:30+05:30",
+   "sha256": "a16d20aec8fd97a27330efa49bb706a2b5f844f1f4693fdab1622093ee170ff8",
+   "bytes": 2854,
+   "truncated_to_first_20000_chars": false,
+   "content_type": "text/plain",
+   "license_note": "US federal government web content. Treated as public-domain government work; no per-page license check was made. Text is the fetched page text, not the original HTML. Used only as a benign host document."
+  },
+  {
+   "source_id": "customer_support-ftc-mail-order-rule",
+   "domain": "customer_support",
+   "title": "FTC Business Guide to the Mail, Internet, or Telephone Order Merchandise Rule",
+   "path": "corpus/real/customer_support-ftc-mail-order-rule.txt",
+   "origin_url": "https://www.ftc.gov/business-guidance/resources/business-guide-ftcs-mail-internet-or-telephone-order-merchandise-rule",
+   "retrieved_at": "2026-10-04T01:06:30+05:30",
+   "sha256": "bddb03bf5d535fcc7ea45ef8b69b374ce9858bbd686a8be7d566aa9a7cbee74c",
+   "bytes": 19861,
+   "truncated_to_first_20000_chars": true,
+   "content_type": "text/plain",
+   "license_note": "US federal government web content. Treated as public-domain government work; no per-page license check was made. Text is the fetched page text, not the original HTML. Used only as a benign host document."
+  },
+  {
+   "source_id": "research-nih-data-sharing",
+   "domain": "research",
+   "title": "NIH Scientific Data Sharing: Policies and Access to Data",
+   "path": "corpus/real/research-nih-data-sharing.txt",
+   "origin_url": "https://sharing.nih.gov/data-management-and-sharing-policy/about-data-management-sharing-policy/data-management-and-sharing-policy-overview",
+   "retrieved_at": "2026-10-04T01:06:30+05:30",
+   "sha256": "5d310286c0866cdc57a584366013919a828dd142e776a253a081fb9d4af34991",
+   "bytes": 2143,
+   "truncated_to_first_20000_chars": false,
+   "content_type": "text/plain",
+   "license_note": "US federal government web content. Treated as public-domain government work; no per-page license check was made. Text is the fetched page text, not the original HTML. Used only as a benign host document."
+  },
+  {
+   "source_id": "procurement-far-13-003",
+   "domain": "procurement",
+   "title": "FAR 13.003 Policy (simplified acquisition)",
+   "path": "corpus/real/procurement-far-13-003.txt",
+   "origin_url": "https://www.acquisition.gov/far/13.003",
+   "retrieved_at": "2026-10-04T01:06:30+05:30",
+   "sha256": "c9d1e9b4186b6f8e4e6dde465da97c88da4d3d1c0e8847cb2493088794ebc64b",
+   "bytes": 4806,
+   "truncated_to_first_20000_chars": false,
+   "content_type": "text/plain",
+   "license_note": "US federal government web content. Treated as public-domain government work; no per-page license check was made. Text is the fetched page text, not the original HTML. Used only as a benign host document."
+  }
+ ]
+}
