@@ -35,7 +35,7 @@ class AppStates(unittest.TestCase):
   self.assertNotIn('Execution mode',[r.label for r in at.sidebar.radio])
   [x for x in at.sidebar.toggle if x.label=='Offline guard verification'][0].set_value(True).run();self.assertFalse(at.exception)
   self.assertFalse(at.error)
-  self.assertTrue(any('Developer verification is on' in w.value for w in at.warning))
+  self.assertFalse(any('Developer verification is on' in w.value for w in at.warning))  # global warning box removed; tab captions and run labels still say offline
   runs=[b for b in at.button if b.label in ('Run side-by-side','Run clean legitimate task','Run custom challenge')]
   self.assertTrue(all(not b.disabled for b in runs))
  def test_live_configured_and_freellmapi_provider_skips_preset(self):
