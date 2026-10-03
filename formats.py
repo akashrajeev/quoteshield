@@ -27,3 +27,25 @@ def extract(data,format):
     if value:output.append(label+': '+('USD ' if field=='price_usd' else '')+value+suffix)
   return '\n'.join(output)
  raise ValueError('Unsupported fixture format; PDF/DOCX require a dedicated parser')
+
+
+UPLOAD_FORMATS=('txt','md','html','csv')
+def upload_text(filename,data):
+ """Plain-text extraction of one uploaded file for the Judge Challenge slot. No layout, OCR or office parsing."""
+ name=str(filename or '');ext=name.rsplit('.',1)[-1].lower() if '.' in name else ''
+ if ext not in UPLOAD_FORMATS:raise ValueError('Unsupported file type. Upload '+', '.join('.'+f for f in UPLOAD_FORMATS)+' only; PDF, DOCX and other formats are not parsed.')
+ if not isinstance(data,(bytes,bytearray)):raise ValueError('Upload must be raw bytes.')
+ try:text=extract(bytes(data),ext)
+ except UnicodeDecodeError:raise ValueError('File is not valid UTF-8 text.')
+ if not text.strip():raise ValueError('No text could be extracted from this file.'+(' CSV extraction keeps only the vendor, price_usd, delivery_days, warranty_months, support and notes columns.' if ext=='csv' else ''))
+ return text
+
+def judge_artifact(payload='',task='',upload=None):
+ """Build the Judge Challenge artifact. upload is (filename,bytes) or None. An empty task keeps the default trusted request."""
+ if upload is not None and payload.strip():raise ValueError('Use either the text box or a file, not both.')
+ text=upload_text(*upload) if upload is not None else payload
+ artifact={'id':'judge-custom','payload':text,'calls':[]}
+ if task.strip():
+  if len(task)>8192:raise ValueError('Task exceeds the 8192 character limit.')
+  artifact['request']=task.strip()
+ return artifact
