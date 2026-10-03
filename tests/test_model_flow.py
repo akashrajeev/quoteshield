@@ -26,3 +26,36 @@ class ModelFlowTests(unittest.TestCase):
   class Broken(FixtureModel):
    def json(self,*args):return {'injection':'no','reason':'fixture','snippet':''}
   with self.assertRaises(RuntimeError):firewall('safe quote',Broken())
+
+ def test_scope_prompt_names_and_bounds(self):
+  class Exact(FixtureModel):
+   def json(self,system,value):
+    self.checked=True
+    assert 'requires read_file' in system
+    assert 'send_email, write_record' in system
+    assert value['candidate_bounds']['tools']==['read_file']
+    assert value['candidate_bounds']['resources']==list(QUOTES)
+    return value['candidate_bounds']
+  model=Exact();scope=scope_from_request(DEFAULT_REQUEST,model)
+  self.assertTrue(model.checked);self.assertEqual(scope.tools,['read_file']);self.assertEqual(scope.resources,list(QUOTES))
+ def test_omitted_scope_tool_still_fails_closed(self):
+  class Missing(FixtureModel):
+   def json(self,*args):return {'tools':['compare'],'resources':list(QUOTES),'recipients':[],'web_urls':[],'record_keys':[]}
+  scope=scope_from_request(DEFAULT_REQUEST,Missing());self.assertEqual(scope.tools,[])
+  self.assertEqual(Guard(scope,Sandbox()).inspect(ToolCall('read_file',{'path':'quotes/atlas.txt'})).verdict,'BLOCK')
+
+ def test_clean_presenter_finalization_is_explicit_and_narrow(self):
+  class Groq(FixtureModel):
+   url='https://api.groq.com/openai/v1/chat/completions';model='openai/gpt-oss-120b'
+   def complete(self,messages,tools=None,json_output=False):
+    if json_output:
+     self.finalized=True;assert tools is None
+     return {'role':'assistant','content':json.dumps({'summary':'Fixture','vendors':EXPECTED})}
+    self.finalized=False
+    return super().complete(messages,tools)
+  clean={'id':'clean-task','payload':'','calls':[]}
+  m=Groq();r=Runner(m).run(attack=clean,mode='llm',clean_presenter_final=True)
+  self.assertTrue(m.finalized);self.assertTrue(r['task_complete']);self.assertTrue(any(e['rule']=='clean_presenter_json_final' for e in r['audit']))
+  for attack,protected,enabled in [(clean,True,False),({'id':'plain-01','payload':'attack'},True,True),(clean,False,True)]:
+   m=Groq();r=Runner(m).run(attack=attack,protected=protected,mode='llm',clean_presenter_final=enabled)
+   self.assertFalse(m.finalized);self.assertFalse(any(e['rule']=='clean_presenter_json_final' for e in r['audit']))
