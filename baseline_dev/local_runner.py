@@ -30,8 +30,9 @@ def main():
    if not key:raise ValueError('Missing key')
    os.environ['SHIELD_MODEL_KEY']=key
    print('Remote mock prompts leave your machine. Verify billing/credits. No retries, paid fallback or sealed input.')
-   r=httpx.get(os.environ['SHIELD_MODEL_URL'].rsplit('/',1)[0]+'/models',headers={'Authorization':'Bearer '+key},timeout=20)
-   if r.status_code!=200:raise RuntimeError('Model-list HTTP '+str(r.status_code))
+   models_url=os.environ['SHIELD_MODEL_URL'].removesuffix('/chat/completions')+'/models'
+   r=httpx.get(models_url,headers={'Authorization':'Bearer '+key},timeout=20)
+   if r.status_code!=200:raise RuntimeError('Model-list HTTP '+str(r.status_code)+' at '+models_url)
    if model_name not in {m['id'] for m in r.json().get('data',[])}:raise RuntimeError('Model not listed; choose --model explicitly')
   class Paced(ModelAdapter):
    def before_attempt(self):
