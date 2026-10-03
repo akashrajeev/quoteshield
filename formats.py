@@ -29,11 +29,16 @@ def extract(data,format):
  raise ValueError('Unsupported fixture format; PDF/DOCX require a dedicated parser')
 
 
-UPLOAD_FORMATS=('txt','md','html','csv')
+UPLOAD_FORMATS=('txt','md','html','csv','pdf','docx')
+DOC_UPLOAD_FORMATS=('pdf','docx')
+UPLOAD_REFUSED_FORMATS=('png','jpg','jpeg','webp')  # offered by the uploader only so the explicit OCR-not-supported refusal is shown
 def upload_text(filename,data):
- """Plain-text extraction of one uploaded file for the Judge Challenge slot. No layout, OCR or office parsing."""
+ """Plain-text extraction of one uploaded file for the Judge Challenge slot. No layout fidelity and no OCR. PDF/DOCX go through extractors_doc; images are refused."""
  name=str(filename or '');ext=name.rsplit('.',1)[-1].lower() if '.' in name else ''
- if ext not in UPLOAD_FORMATS:raise ValueError('Unsupported file type. Upload '+', '.join('.'+f for f in UPLOAD_FORMATS)+' only; PDF, DOCX and other formats are not parsed.')
+ if ext in DOC_UPLOAD_FORMATS or ext in UPLOAD_REFUSED_FORMATS:
+  from extractors_doc import extract_document
+  return extract_document(name,data)
+ if ext not in UPLOAD_FORMATS:raise ValueError('Unsupported file type. Upload '+', '.join('.'+f for f in UPLOAD_FORMATS)+' only. Images are not supported (no OCR yet) and other formats are not parsed.')
  if not isinstance(data,(bytes,bytearray)):raise ValueError('Upload must be raw bytes.')
  try:text=extract(bytes(data),ext)
  except UnicodeDecodeError:raise ValueError('File is not valid UTF-8 text.')
