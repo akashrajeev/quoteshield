@@ -19,7 +19,7 @@ class ConfirmGate(unittest.TestCase):
    [b for b in at.button if b.label == 'Run custom challenge'][0].click().run()
    self.assertFalse(at.exception)
    self.assertIn('needs_confirm', at.session_state); self.assertNotIn('pair_error', at.session_state)
-   self.assertTrue(any('please confirm this task' in w.value for w in at.warning))
+   self.assertTrue(any('please confirm this task' in m.value for m in at.markdown))
    self.assertTrue([b for b in at.button if b.label == 'Confirm and run this task'])
  def test_confirm_runs_the_task_through_the_protected_pipeline(self):
   with mock.patch.dict(os.environ, ENV), mock.patch('dotenv.load_dotenv', lambda *a, **k: False):
