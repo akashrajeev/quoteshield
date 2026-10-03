@@ -38,7 +38,7 @@ def _lane(sc, protected, review=None, repeats=1):
  result, times = None, []
  for _ in range(max(1, repeats)):
   t0 = time.perf_counter()
-  result = runner.run(sc.user_request, attack_dict(sc), protected, 'offline', **kw)
+  result = runner.run(sc.user_request, attack_dict(sc), protected, 'offline', policy=shield.policy_from_scenario(sc), **kw)
   times.append((time.perf_counter() - t0) * 1000)
  t = from_legacy(trace.build(result), sc.id, result)
  return {'attack_success': t.attack_success, 'task_complete': t.task_complete, 'effect_executed': t.effect_executed,
