@@ -78,8 +78,13 @@ class ModelAdapter:
       continue
      raise RuntimeError(f"Model HTTP {r.status_code} at {transport_meta['endpoint']} | model={self.model} | {detail} | {hint} | retries={retry}; stopped")
     response=r.json();message=response['choices'][0]['message']
+    if not isinstance(message,dict):raise TypeError('Assistant message must be an object')
     self.trace.append({'transport':transport_meta,'request':copy.deepcopy(body),'response':response,'retry_count':retry,'recovery_policy':'same-model tool-error correction, maximum 2 retries','latency_ms':(time.perf_counter()-started)*1000});return message
-   except (httpx.HTTPError,ValueError,KeyError,IndexError) as exc:raise RuntimeError('Model transport or response schema failed; no retry for this error') from exc
+   except (httpx.HTTPError,ValueError,KeyError,IndexError,TypeError) as exc:
+    kind=type(exc).__name__;category='transport' if isinstance(exc,httpx.HTTPError) else 'response_schema'
+    # Do not retain exception strings: they may contain credential-bearing URLs or raw bodies.
+    self.trace.append({'transport':transport_meta,'request':copy.deepcopy(body),'error':{'category':category,'exception_type':kind,'cause_type':type(exc.__cause__).__name__ if exc.__cause__ else None,'detail':'Provider request failed before a validated assistant message was obtained.'},'retry_count':retry,'recovery_policy':'no retry for transport or response schema failure','latency_ms':(time.perf_counter()-started)*1000})
+    raise RuntimeError('Model '+category+' failure ('+kind+'); no retry for this error. Inspect failed request trace.') from exc
  def json(self,system,value):
   content=self.complete([{'role':'system','content':system},{'role':'user','content':json.dumps(value)}],json_output=True)['content']
   try:

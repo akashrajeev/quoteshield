@@ -52,3 +52,18 @@ class TransportTests(unittest.TestCase):
    self.assertEqual(m.trace[0]['transport']['endpoint'],'https://example.test/v1/chat/completions')
    self.assertEqual(m.trace[0]['transport']['auth_scheme'],'Bearer');self.assertTrue(m.trace[0]['transport']['auth_present'])
    self.assertNotIn('hidden-key',json.dumps(m.trace));self.assertNotIn('password',json.dumps(m.trace))
+
+class FailedAttemptDiagnosticsTests(unittest.TestCase):
+ def test_transport_type_and_failing_request_recorded_without_secret_url(self):
+  secret='fixture-secret'
+  with patch.dict(os.environ,{'SHIELD_MODEL_URL':'http://localhost:11434/v1/chat/completions?key='+secret,'SHIELD_MODEL_NAME':'qwen2.5:3b','SHIELD_MODEL_KEY':secret}),patch('httpx.post',side_effect=httpx.ReadTimeout('credential URL '+secret)) as post:
+   m=ModelAdapter()
+   with self.assertRaisesRegex(RuntimeError,'ReadTimeout') as cm:m.complete([{'role':'user','content':'fixture task'}])
+   self.assertEqual(post.call_count,1);self.assertEqual(len(m.trace),1);self.assertEqual(m.trace[0]['error']['category'],'transport');self.assertEqual(m.trace[0]['error']['exception_type'],'ReadTimeout');self.assertEqual(m.trace[0]['request']['messages'][0]['content'],'fixture task');self.assertNotIn(secret,json.dumps(m.trace));self.assertNotIn(secret,str(cm.exception));self.assertEqual(post.call_args.kwargs['timeout'],45)
+ def test_invalid_provider_json_and_missing_message_shapes_recorded(self):
+  cases=[(httpx.Response(200,text='secret raw non-json'),'JSONDecodeError'),(httpx.Response(200,json={'choices':[]}), 'IndexError'),(httpx.Response(200,json={'choices':[{}]}),'KeyError'),(httpx.Response(200,json={'choices':[{'message':[]}]}),'TypeError')]
+  for response,kind in cases:
+   with self.subTest(kind=kind),patch.dict(os.environ,{'SHIELD_MODEL_URL':'http://localhost:11434/v1/chat/completions','SHIELD_MODEL_NAME':'fixture','SHIELD_MODEL_KEY':''}),patch('httpx.post',return_value=response) as post:
+    m=ModelAdapter()
+    with self.assertRaisesRegex(RuntimeError,kind):m.complete([])
+    self.assertEqual(post.call_count,1);self.assertEqual(m.trace[0]['error']['category'],'response_schema');self.assertEqual(m.trace[0]['error']['exception_type'],kind);self.assertNotIn('secret raw',json.dumps(m.trace))
