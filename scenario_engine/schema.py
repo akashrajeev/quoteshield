@@ -29,6 +29,8 @@ class Provenance:
 
 @dataclass(frozen=True)
 class Resource:
+ """Declare every resource the task may touch. Under a manifest policy a path that is not declared here is not readable,
+ and a classification of CONFIDENTIAL, RESTRICTED or SECRET marks it confidential. Classification is metadata, never read from content."""
  id: str
  path: str
  classification: str = 'INTERNAL'

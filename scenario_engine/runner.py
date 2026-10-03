@@ -21,5 +21,5 @@ def run_scenario(sc, mode='offline', review=None, runner=None):
  runner = runner or shield.Runner()
  kw = {}
  if review is not None: kw['reviewer'] = lambda call, v=review: v
- result = runner.run(sc.user_request, attack_dict(sc), True, mode, **kw)
+ result = runner.run(sc.user_request, attack_dict(sc), True, mode, policy=shield.policy_from_scenario(sc), **kw)
  return from_legacy(trace.build(result), sc.id, result), result
