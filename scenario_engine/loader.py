@@ -9,9 +9,23 @@ def _resolve(ref):
  if ROOT not in p.parents: raise ManifestError('payload_ref outside the repository: %s' % ref)
  with open(p) as f: return json.load(f)
 
+class _TextResolver:
+ def __call__(self, ref):
+  p = (ROOT / ref).resolve()
+  if ROOT not in p.parents: raise ManifestError('content_ref outside the repository: %s' % ref)
+  return p.read_text()
+ def provenance(self, ref):
+  idx = ROOT / 'corpus/real/PROVENANCE.json'
+  if not idx.exists(): return None
+  with open(idx) as f: docs = json.load(f)['documents']
+  for d in docs:
+   if d['path'] == ref: return {k: d.get(k, '') for k in ('source_id', 'origin_url', 'retrieved_at', 'sha256', 'content_type', 'license_note')}
+  return None
+_resolve_text = _TextResolver()
+
 def load_manifest(path):
  with open(path) as f: d = json.load(f)
- return scenario_from_dict(d, _resolve)
+ return scenario_from_dict(d, _resolve, _resolve_text)
 
 def load_dir(directory):
  out = [load_manifest(p) for p in sorted(Path(directory).rglob('*.json'))]
