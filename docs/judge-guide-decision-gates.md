@@ -52,3 +52,9 @@ Limit to state plainly: the optional classifiers are models and can be wrong in 
 
 ## Reading a run
 Each run produces a Security Trace, a plain-language explanation (every sentence cites its audit entries) and a live L0-L9 panel built from the same records. Gate verdicts, `blocked_at` and penetration depth are observed from the run, never written into a scenario. Offline runs are labelled "local classifier + scripted proposals". Numbers from any single run describe that run only.
+
+## Authorization inputs and known remaining domain coupling
+
+Scope, sandbox taint and the action guard take their authorization inputs from a generic resource policy (known resources, confidential resources and prefixes, secret markers). For a scenario manifest the policy is built from the resources the manifest declares and their classification metadata, so a manifest must declare every resource the task may touch. Without a manifest the default policy reproduces the original procurement values; a differential check on 1536 scope calls and 120 offline runs showed no change in behaviour.
+
+Two places still carry the procurement convention, deliberately and documented: the security oracle in oracles.py (evaluator side, versioned, left alone so results stay comparable across runs) and a display label in trace.py that marks reads under `confidential/`. Both match the default policy. Neither changes a gate decision.
