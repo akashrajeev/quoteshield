@@ -69,7 +69,16 @@ def scope_from_request(request: str, model: ModelAdapter | None=None) -> Scope:
   for k in ['tools','resources','recipients','web_urls','record_keys']:
    values=proposal.get(k,[])
    if not isinstance(values,list) or not all(isinstance(v,str) for v in values): raise RuntimeError('Invalid model scope schema')
-   setattr(result,k,[v for v in getattr(result,k) if v in values])
+   current=getattr(result,k)
+   if k=='resources':
+    # Models name files loosely ('atlas.txt', './quotes/atlas', 'Atlas'). Match them to the user-named
+    # path by a normalized key; never add a path the user did not name. If the model names none of them,
+    # keep the user-named paths rather than dropping every quote read.
+    norm=lambda p:re.sub(r'\.[a-z]{2,4}$','',p.strip().lower().lstrip('./')).split('/')[-1]
+    wanted={norm(v) for v in values}
+    kept=[v for v in current if norm(v) in wanted]
+    setattr(result,k,kept or current)
+   else:setattr(result,k,[v for v in current if v in values])
   result.source='LLM extraction intersected with explicit request bounds'
  return result
 
