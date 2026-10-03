@@ -1,10 +1,14 @@
 """Optional local prompt-injection classifier for the content firewall.
 
-Model: ProtectAI deberta-v3-base-prompt-injection-v2 (Apache 2.0, English only,
-ONNX, CPU). It is OFF by default. Enable with SHIELD_LOCAL_CLASSIFIER=1 and point
-SHIELD_LOCAL_CLASSIFIER_DIR at a folder holding tokenizer.json and
-onnx/model.onnx (python local_classifier.py --download DIR fetches them once;
-the model file is about 739 MB and is never committed).
+Default backend: ProtectAI deberta-v3-base-prompt-injection-v2 (Apache 2.0, English
+only, ONNX, CPU, model file about 739 MB, never committed).
+Optional backend: SHIELD_LOCAL_CLASSIFIER_BACKEND=promptguard2 (Meta
+Llama-Prompt-Guard-2-86M, gated on Hugging Face; the setup script is not in
+the repo yet). It is not the default until it has its own dev
+smoke results on file.
+OFF unless SHIELD_LOCAL_CLASSIFIER=1. Point SHIELD_LOCAL_CLASSIFIER_DIR at a folder
+holding tokenizer.json and onnx/model.onnx (python local_classifier.py --download DIR
+fetches the ProtectAI files once).
 
 Findings use the firewall's existing 'semantic' shape, so line removal and the
 whole-document quarantine fallback in shield.firewall work unchanged. If it is
@@ -18,12 +22,22 @@ from pathlib import Path
 RULE = 'local classifier'
 MODEL_REPO = 'protectai/deberta-v3-base-prompt-injection-v2'
 MODEL_FILES = ['config.json', 'tokenizer.json', 'onnx/model.onnx']
+# Two interchangeable backends behind one interface. Both are ONNX with input_ids and
+# attention_mask in, two logits out (index 1 = injection). Pick with SHIELD_LOCAL_CLASSIFIER_BACKEND.
+# The default stays protectai until promptguard2 has its own dev smoke results on file.
+BACKENDS = {
+ 'protectai': 'ProtectAI deberta-v3-base-prompt-injection-v2',
+ 'promptguard2': 'Meta Llama-Prompt-Guard-2-86M',
+}
+DEFAULT_BACKEND = 'protectai'
 MAX_CHUNK_CHARS = 1200      # about 300 tokens; the model reads at most 512
 MAX_CHUNKS = 64             # scan budget per firewall call; beyond it we quarantine
 MAX_FINDINGS = 8
 
 class LocalClassifier:
- def __init__(self, model_dir, threshold=0.5):
+ def __init__(self, model_dir, threshold=0.5, backend=DEFAULT_BACKEND):
+  if backend not in BACKENDS: raise RuntimeError('Unknown local classifier backend %r; use one of %s' % (backend, ', '.join(BACKENDS)))
+  self.backend = backend; self.model_name = BACKENDS[backend]
   import numpy as np, onnxruntime as ort
   from tokenizers import Tokenizer
   d = Path(model_dir)
@@ -59,7 +73,7 @@ class LocalClassifier:
     hits = [(l, s) for l, s in hits if s >= self.threshold]
     if not hits: hits = [(chunk, self.score(chunk))]   # multi-line pattern: cannot localise, firewall quarantines
     for line, s in hits[:MAX_FINDINGS]:
-     out.append({'rule': RULE, 'encoding': 'semantic', 'snippet': line[:180], 'reason': 'ProtectAI deberta-v3-base-prompt-injection-v2 score %.2f in view "%s"' % (s, label)})
+     out.append({'rule': RULE, 'encoding': 'semantic', 'snippet': line[:180], 'reason': '%s score %.2f in view "%s"' % (getattr(self, 'model_name', 'local classifier'), s, label)})
    if len(out) >= MAX_FINDINGS: break
   return out[:MAX_FINDINGS]
 
@@ -87,10 +101,12 @@ def get():
  if _instance is None:
   directory = os.environ.get('SHIELD_LOCAL_CLASSIFIER_DIR', '')
   if not directory: raise RuntimeError('SHIELD_LOCAL_CLASSIFIER is on but SHIELD_LOCAL_CLASSIFIER_DIR is not set')
-  _instance = LocalClassifier(directory, os.environ.get('SHIELD_LOCAL_CLASSIFIER_THRESHOLD', '0.5'))
+  _instance = LocalClassifier(directory, os.environ.get('SHIELD_LOCAL_CLASSIFIER_THRESHOLD', '0.5'), os.environ.get('SHIELD_LOCAL_CLASSIFIER_BACKEND', DEFAULT_BACKEND).lower())
  return _instance
 
 def download(directory):
+ if os.environ.get('SHIELD_LOCAL_CLASSIFIER_BACKEND', '').lower() == 'promptguard2':
+  raise RuntimeError('promptguard2 is gated: run the Prompt Guard 2 setup script (not in the repo yet; needs an HF token) instead.')
  for name in MODEL_FILES:
   target = Path(directory)/name; target.parent.mkdir(parents=True, exist_ok=True)
   if not target.exists():
