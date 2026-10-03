@@ -4,13 +4,13 @@
 Procurement, finance, HR and support staff who hand routine work to AI agents; the vendors whose documents the agent reads; and the people whose data may sit in those documents. In India this includes small and mid-size firms that work with vendors in several languages and formats.
 
 ## Benefits
-- Staff keep the work moving while risky actions are stopped or sent to a person, instead of the agent being switched off.
+- Staff keep the work moving while unauthorised actions are blocked and authorized consequential actions wait for a person's approval, instead of the agent being switched off.
 - Each intervention shows a plain-language reason and the exact text that triggered it, so a reviewer can judge it without technical knowledge.
 - Vendors are not blacklisted by the system: it reacts to instructions hidden in a document, not to who sent it.
 
 ## Risks and how the design handles them
-- Over-blocking: legitimate documents that discuss security, or contain encoded data such as a base64 logo, could be flagged. Human review is the fallback and the false-positive rate is measured on benign tasks (target: no more than 10%).
-- Review burden: asking a person too often causes approval fatigue. Ask Human is used only for ambiguous actions, and approvals are one-use and tied to the exact call (exact recipient and content).
+- Over-blocking: legitimate documents that discuss security, or contain encoded data such as a base64 logo, could be flagged or have lines removed. Human review is not a general fallback for content false positives; the control is the measured false-positive rate on benign tasks (target: no more than 10%), which is still pending for a real model.
+- Review burden: asking a person too often causes approval fatigue. Ask Human covers explicitly authorized consequential effects, such as sending an email or changing a record the user asked for. Ambiguous requests get a clarification question before any effect. Approvals are one-use and tied to the exact call (exact recipient and content).
 - Language and script: the PS names base64, hex and zero-width characters. Attackers can also write instructions in Hindi, other Indian languages, or mixed-script text. The repo's decoder handles Unicode normalisation and common encodings, but the repo does not claim regional-language coverage. Multilingual attack and benign tests are a gap and should be listed as a limitation.
 - Fairness: no claim is made about fairness across vendors or languages; no study has been done.
 - Accessibility: the dashboard uses standard widgets and a dark theme. That is not an accessibility audit.
