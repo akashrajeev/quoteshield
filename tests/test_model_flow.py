@@ -26,3 +26,20 @@ class ModelFlowTests(unittest.TestCase):
   class Broken(FixtureModel):
    def json(self,*args):return {'injection':'no','reason':'fixture','snippet':''}
   with self.assertRaises(RuntimeError):firewall('safe quote',Broken())
+
+ def test_scope_prompt_names_and_bounds(self):
+  class Exact(FixtureModel):
+   def json(self,system,value):
+    self.checked=True
+    assert 'requires read_file' in system
+    assert 'send_email, write_record' in system
+    assert value['candidate_bounds']['tools']==['read_file']
+    assert value['candidate_bounds']['resources']==list(QUOTES)
+    return value['candidate_bounds']
+  model=Exact();scope=scope_from_request(DEFAULT_REQUEST,model)
+  self.assertTrue(model.checked);self.assertEqual(scope.tools,['read_file']);self.assertEqual(scope.resources,list(QUOTES))
+ def test_omitted_scope_tool_still_fails_closed(self):
+  class Missing(FixtureModel):
+   def json(self,*args):return {'tools':['compare'],'resources':list(QUOTES),'recipients':[],'web_urls':[],'record_keys':[]}
+  scope=scope_from_request(DEFAULT_REQUEST,Missing());self.assertEqual(scope.tools,[])
+  self.assertEqual(Guard(scope,Sandbox()).inspect(ToolCall('read_file',{'path':'quotes/atlas.txt'})).verdict,'BLOCK')

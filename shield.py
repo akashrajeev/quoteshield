@@ -61,7 +61,7 @@ def scope_from_request(request: str, model: ModelAdapter | None=None) -> Scope:
  if re.search(r'\b(?:search|browse)\b',request,re.I):
   result.tools.append('search_web'); result.web_urls=re.findall(r'https://[A-Za-z0-9./_-]+',request)
  if model and model.available:
-  proposal=model.json('Extract tools, exact resources, recipients, record_keys, web_urls from the authenticated user task. JSON only with those array fields. Uncertain permission is ambiguous. Do not add inferred resources.',{'request':request})
+  proposal=model.json('Extract tools, exact resources, recipients, record_keys, web_urls from the authenticated user task. JSON only with those array fields. Valid tool names are read_file, search_web, send_email, write_record. A comparison of named quote files requires read_file and all those exact named resources, even if the verb read is absent. Use only the provided candidate_bounds, retaining needed permissions; never invent a tool such as compare or file_access. Do not add inferred resources, recipients or writes. Uncertain permission is ambiguous.',{'request':request,'candidate_bounds':asdict(result)})
   # Intersect with explicit user-authorized bounds, never trust invented scope.
   for k in ['tools','resources','recipients','web_urls','record_keys']:
    values=proposal.get(k,[])
