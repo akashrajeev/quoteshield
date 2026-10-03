@@ -52,4 +52,14 @@ class ScenarioTests(unittest.TestCase):
    t, r = scenarios.run(name, review=True if name == '5_ask_human' else None)
    for s in t['stages']: self.assertTrue(s['explanation'].strip(), (name, s['stage']))
 
+class UiHelpers(unittest.TestCase):
+ def test_comparison_rows_and_bars(self):
+  import trace_ui
+  items = [(s['title'], scenarios.run(n)[0]) for n, s in scenarios.SCENARIOS.items()]
+  rows = trace_ui.comparison_rows(items)
+  self.assertEqual(len(rows), len(scenarios.SCENARIOS))
+  self.assertEqual(rows[0]['Stopped at'], '1/10 User prompt guard')
+  self.assertEqual(rows[-1]['Stopped at'], 'not stopped')
+  self.assertIn('stopped at Content firewall', trace_ui.depth_bars(items))
+
 if __name__ == '__main__': unittest.main()
