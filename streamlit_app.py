@@ -59,8 +59,17 @@ def run(artifact):
  st.session_state.pop('pair_error',None)
  runner=Runner();partial={};active_lane='baseline';lane_starts={}
  live=st.empty();pipeline=st.empty();events=[]
+ import live_progress as _lp,time as _t
+ _pace=float(os.environ.get('QUOTESHIELD_LIVE_PACE','0.3'))
+ st.markdown('**Live layer progress** (each layer lights up as the run reaches it; the short pause between events is for visibility only and changes no data)')
+ _cols=st.columns(2,gap='large');_prog={'baseline':_lp.LaneProgress('baseline',False),'protected':_lp.LaneProgress('protected',True)}
+ _ph={'baseline':_cols[0].empty(),'protected':_cols[1].empty()};_ttl={'baseline':'Unprotected lane','protected':'Full shield lane'}
+ def _draw(lane):_ph[lane].markdown(_lp.render(_prog[lane],_ttl[lane]),unsafe_allow_html=True)
+ _draw('baseline');_draw('protected')
  def sink(lane,event):
   events.append({'lane':lane,**event})
+  _prog[lane].on_event(event);_draw(lane)
+  if _pace:_t.sleep(_pace)
   # This text updates only when a real executor/firewall event occurs.
   recent=[e for e in events if e['lane']=='protected'][-4:]
   observed={e['stage'] for e in events if e['lane']=='protected'}
@@ -71,7 +80,10 @@ def run(artifact):
    request=artifact.get('request', __import__('shield').DEFAULT_REQUEST)
    for lane,protected in [('baseline',False),('protected',True)]:
     active_lane=lane;lane_starts[lane]=len(runner.model.trace)
+    _prog[lane].started=True;_draw(lane)
+    if _pace:_t.sleep(_pace)
     partial[lane]=runner.run(request,artifact,protected,mode,event_sink=lambda e,lane=lane:sink(lane,e),request_confirmed=bool(artifact.get('request_confirmed')))
+    _prog[lane].finish(partial[lane]);_draw(lane)
     partial[lane]['explanation']=__import__('scenario_engine.explain',fromlist=['explain_run']).explain_run(partial[lane],lane=lane)
    result={**partial,'label':'LLM agent run' if mode=='llm' else 'Offline adversarial tool-proposal verification'}
   pipeline.caption('Execution complete. Scope, firewall and guard decisions are recorded; the agent result and mock effects are captured. Human review appears only when requested.')
