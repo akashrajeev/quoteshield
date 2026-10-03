@@ -1,5 +1,6 @@
 """Streamlit panel for the SecurityTrace. Pure rendering: it shows what trace.build() derived
 from a real run. Nothing here animates, times or invents a stage."""
+import html
 import json
 import streamlit as st
 import trace
@@ -24,9 +25,10 @@ def render(t, title=None, mode_note=None):
  if t.get('findings'):
   st.markdown('**Prompt classification (from the request guard)**')
   for f in t['findings']: st.write('- %s (found in the %s view): "%s"' % (f['rule'], f['encoding'], str(f.get('snippet', ''))[:140]))
- if b: st.error('Stopped at stage %d of %d: %s (%s)' % (b['position'], b['of'], b['label'], b['rule']))
- elif t.get('waiting_for_human'): st.warning('Waiting for a person to approve the exact call. Nothing has been sent.')
- else: st.success('No stage stopped this run.')
+ def _banner(text,bg,fg,edge): st.markdown('<div style="background:%s;color:%s;border-left:5px solid %s;padding:12px 16px;border-radius:6px;font-weight:600">%s</div>'%(bg,fg,edge,html.escape(text)),unsafe_allow_html=True)
+ if b: _banner('Stopped at stage %d of %d: %s (%s)'%(b['position'],b['of'],b['label'],b['rule']),'#f8d7da','#5c0a14','#c0392b')
+ elif t.get('waiting_for_human'): _banner('Waiting for a person to approve the exact call. Nothing has been sent.','#fff3c4','#4d3a00','#d4a017')
+ else: _banner('No stage stopped this run.','#d9f0e1','#0d3b22','#2e8b57')
  st.markdown('**Tool execution: %s**' % ('EXECUTED (mock effect captured)' if t['effect_executed'] else 'NOT EXECUTED'))
  if b:
   st.markdown('**Why it was stopped**')
