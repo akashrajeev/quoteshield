@@ -15,6 +15,8 @@ import os
 ROOT=Path(__file__).parent
 load_local_env()
 if os.environ.get("SHIELD_PROVIDER") in PRESETS:configure(os.environ["SHIELD_PROVIDER"])
+# Judge-facing app: the request guard is on unless the operator sets SHIELD_REQUEST_GUARD=0. Library and script defaults stay off.
+os.environ.setdefault("SHIELD_REQUEST_GUARD","1")
 st.set_page_config(page_title='QuoteShield | Procurement Room',page_icon='◈',layout='wide')
 appearance=st.sidebar.radio('Interface',['Styled procurement room','Regular Streamlit (dark)'],key='interface_style')
 if appearance=='Styled procurement room':
