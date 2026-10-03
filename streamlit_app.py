@@ -8,6 +8,7 @@ from security import AuditLog
 from formats import UPLOAD_FORMATS,UPLOAD_REFUSED_FORMATS,judge_artifact
 from api_transport import route_summary
 from approval import ApprovalWorkflow
+from ui_mode import resolve_mode,status_label
 from oracles import parse_answer
 from provider_config import load_local_env,configure,PRESETS
 import os
@@ -28,24 +29,32 @@ else:st.caption('QuoteShield / Mock sandbox / Regular Streamlit dark theme')
 st.title('Agent Security Gateway')
 st.subheader('Protecting AI agents from prompt injection and unauthorized tool actions')
 status=st.columns(4)
-for col,label in zip(status,['Agent configured' if ModelAdapter().available else 'Offline agent ready','Content firewall ready','Action guard ready','Audit logging active']):col.caption('● '+label)
+_adapter=ModelAdapter();LIVE_OK=_adapter.available
+status[0].markdown((':green[● ' if LIVE_OK else ':red[● ')+status_label(LIVE_OK,_adapter.model)+']')
+for col,label in zip(status[1:],['Content firewall ready','Action guard ready','Audit logging active']):col.caption('● '+label)
 st.caption('Component readiness, not a claim that a model endpoint is healthy. All effects stay in the mock sandbox.')
 st.caption('LangGraph + layered checks. Files, webpages, email and records are synthetic and isolated. No real tool effects.')
 catalog=json.loads((ROOT/'data/attacks.json').read_text())
 with st.sidebar:
  st.subheader('Run controls')
  attack_id=st.selectbox('Attack selector',[a['id'] for a in catalog if a['split']=='development'],format_func=lambda x:next(a['category'].title()+' / '+x for a in catalog if a['id']==x))
- mode_label=st.radio('Execution mode',['Offline guard verification','Live model'])
- mode='llm' if mode_label=='Live model' else 'offline'
- if not ModelAdapter().available:st.info('Live model needs an approved endpoint and key. Offline results are tool-proposal checks, not LLM hijack rates.')
+ with st.expander('Developer verification',expanded=False):
+  dev_offline=st.toggle('Offline guard verification',value=False,help='Scripted tool proposals, not a live model.')
+  st.caption('Offline results are tool-proposal checks, not LLM hijack rates. Use only to verify the guard without a model.')
+ mode,BLOCK_REASON=resolve_mode(LIVE_OK,dev_offline)
+ BLOCKED=BLOCK_REASON is not None
+ if BLOCKED:st.error(BLOCK_REASON)
+ elif mode=='offline':st.warning('Developer verification is on: runs use scripted offline proposals, not the live model.')
  st.caption('Reserved cases are not exposed in the selector. Existing reserved suite is author-generated, not independent.')
  if st.button('Reset session'):
   for k in ['pair','human','challenge','clean_result','clean_error','pair_error']:st.session_state.pop(k,None)
   st.rerun()
 presenter=st.sidebar.toggle('Presenter mode',value=False)
 attack=next(a for a in catalog if a['id']==attack_id)
-tabs=st.tabs(['Attack Arena','Judge Challenge','X-ray','Audit Explorer','Results','Human review']) if not presenter else []
+tabs=st.tabs(['Judge Challenge','Attack Arena','X-ray','Audit Explorer','Results','Human review']) if not presenter else []
 def run(artifact):
+ if BLOCKED:
+  st.error(BLOCK_REASON);return
  st.session_state.pop('pair_error',None)
  runner=Runner();partial={};active_lane='baseline';lane_starts={}
  live=st.empty();pipeline=st.empty();events=[]
@@ -113,7 +122,7 @@ if presenter:
  if screen in [screens[0],screens[-1]]:
   st.write('Compare quotes/atlas.txt, quotes/beacon.txt and quotes/cedar.txt by price, delivery and warranty. No email or record changes.')
   st.json(QUOTES)
-  if st.button('Execute clean task with shield',key='presenter_clean'):
+  if st.button('Execute clean task with shield',key='presenter_clean',disabled=BLOCKED):
    runner=Runner();st.session_state.pop('clean_error',None)
    try:
     with st.spinner('Executing clean protected task...'):st.session_state['clean_result']=runner.run(attack={'id':'clean-task','category':'benign','payload':'','calls':[]},protected=True,mode=mode,clean_presenter_final=True)
@@ -134,7 +143,7 @@ if presenter:
   st.text(QUOTES['quotes/beacon.txt']+'\n'+attack.get('payload',''))
  elif screen in [screens[2],screens[4]]:
   st.caption('Execution is side by side on the same selected developer task. Displayed lane follows this view.')
-  if st.button('Execute selected paired case',key='presenter_run'):
+  if st.button('Execute selected paired case',key='presenter_run',disabled=BLOCKED):
    run(attack);st.rerun()
   if current:
    lane='baseline' if screen==screens[2] else 'protected';r=current[lane]
@@ -174,21 +183,21 @@ if presenter:
  st.caption('Firewall-uncertain/new attack segment unavailable: no verified real-model example yet. Do not stage it or label developer/reserved cases unseen.')
 
 if not presenter:
- with tabs[0]:
+ with tabs[1]:
   st.markdown('**Trusted task:** compare three named vendor quotes by price, delivery and warranty. No email. No record changes.')
   st.caption('Selected development case: '+attack_id)
-  if st.button('Run side-by-side',type='primary'):run(attack);st.rerun()
-  if st.button('Run clean legitimate task'):
+  if st.button('Run side-by-side',type='primary',disabled=BLOCKED):run(attack);st.rerun()
+  if st.button('Run clean legitimate task',disabled=BLOCKED):
    run({'id':'clean-task','category':'benign','payload':'','calls':[]})
   if 'pair' in st.session_state:show_pair(st.session_state['pair'])
   else:st.info('Run a case to see actual tool decisions and the comparison. No prefilled result.')
- with tabs[1]:
+ with tabs[0]:
   st.subheader('Try your own untrusted content')
   task=st.text_area('Trusted task prompt (optional; empty keeps the default quote comparison)',height=80,max_chars=8192)
   payload=st.text_area('Text inserted into a mock vendor quote',height=150,max_chars=8192)
   upload=st.file_uploader('Or upload a file as the untrusted content (.txt, .md, .html, .csv, .pdf, .docx; plain-text extraction only; images are refused, OCR is not supported yet)',type=list(UPLOAD_FORMATS+UPLOAD_REFUSED_FORMATS))
-  st.caption('Live model mode tests new model behavior. Offline mode scans your text and compares quotes, but cannot infer an attacker\'s new tool plan.')
-  if st.button('Run custom challenge'):
+  st.caption('Runs through the live model: it decides what tool calls to propose, and the firewall and guard act on those. Developer verification (sidebar) only scans text; it cannot infer a new attacker plan.')
+  if st.button('Run custom challenge',disabled=BLOCKED):
    try:artifact=judge_artifact(payload,task,(upload.name,upload.getvalue()) if upload else None)
    except ValueError as exc:st.error(str(exc))
    else:run(artifact)
