@@ -41,6 +41,7 @@ class ModelAdapter:
   if not parsed.path.endswith('/chat/completions'):raise RuntimeError('SHIELD_MODEL_URL must end in /chat/completions; BASE_URL should omit that suffix')
   if parsed.hostname=='generativelanguage.googleapis.com' and not parsed.path.startswith('/v1beta/openai/'):raise RuntimeError('Gemini OpenAI-compatible URL must use /v1beta/openai/chat/completions')
   if parsed.hostname=='api.groq.com' and not parsed.path.startswith('/openai/v1/'):raise RuntimeError('Groq OpenAI-compatible URL must use /openai/v1/chat/completions')
+  transport_meta={'endpoint':parsed.scheme+'://'+(parsed.hostname or '')+parsed.path,'auth_scheme':'Bearer' if self.key else 'none','auth_present':bool(self.key)}
   names=[]
   if tools:
    tools=copy.deepcopy(tools)
@@ -66,14 +67,14 @@ class ModelAdapter:
      hint='Check provider model access and request schema.'
      if recoverable:hint='Provider rejected generated tool call; same-model correction attempted up to twice.'
      elif 'model' in detail.lower() and any(v in detail.lower() for v in ['not found','invalid','decommission','does not exist']):hint='Select an accessible same-provider model with --model after checking entitlement. Start a separate benchmark.'
-     self.trace.append({'request':copy.deepcopy(body),'error':{'http_status':r.status_code,'detail':detail},'retry_count':retry,'recovery_policy':'same-model tool-error correction, maximum 2 retries','latency_ms':(time.perf_counter()-started)*1000})
+     self.trace.append({'transport':transport_meta,'request':copy.deepcopy(body),'error':{'http_status':r.status_code,'detail':detail},'retry_count':retry,'recovery_policy':'same-model tool-error correction, maximum 2 retries','latency_ms':(time.perf_counter()-started)*1000})
      if recoverable and retry<2:
       note=('Valid function tools are: '+', '.join(names)+'. Do not invent or call json/python or any other tool. Return tool calls only using these names, or return the final answer as content.') if names else 'No tools are available in this request. Return the requested JSON as plain assistant content, not a json/python tool call.'
       body['messages']=cleaned+[{'role':'system','content':note}]
       continue
-     raise RuntimeError(f'Model HTTP {r.status_code} at {endpoint_label(self.url)} | model={self.model} | {detail} | {hint} | retries={retry}; stopped')
+     raise RuntimeError(f"Model HTTP {r.status_code} at {transport_meta['endpoint']} | model={self.model} | {detail} | {hint} | retries={retry}; stopped")
     response=r.json();message=response['choices'][0]['message']
-    self.trace.append({'request':copy.deepcopy(body),'response':response,'retry_count':retry,'recovery_policy':'same-model tool-error correction, maximum 2 retries','latency_ms':(time.perf_counter()-started)*1000});return message
+    self.trace.append({'transport':transport_meta,'request':copy.deepcopy(body),'response':response,'retry_count':retry,'recovery_policy':'same-model tool-error correction, maximum 2 retries','latency_ms':(time.perf_counter()-started)*1000});return message
    except (httpx.HTTPError,ValueError,KeyError,IndexError) as exc:raise RuntimeError('Model transport or response schema failed; no retry for this error') from exc
  def json(self,system,value):
   content=self.complete([{'role':'system','content':system},{'role':'user','content':json.dumps(value)}],json_output=True)['content']

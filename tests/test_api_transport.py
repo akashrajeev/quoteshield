@@ -44,3 +44,11 @@ class TransportTests(unittest.TestCase):
   with patch.dict(os.environ,{'SHIELD_MODEL_URL':'https://api.groq.com/openai/v1/chat/completions','SHIELD_MODEL_NAME':'openai/gpt-oss-120b'}),patch('httpx.post',return_value=httpx.Response(200,json={'choices':[{'message':{'role':'assistant','content':'ok'}}]})) as post:
    ModelAdapter().complete([], [{'type':'function','function':{'name':'read_file','parameters':{'type':'object'}}}],json_output=True)
    body=post.call_args.kwargs['json'];self.assertEqual(body['tool_choice'],'auto');self.assertNotIn('response_format',body);self.assertFalse(body['parallel_tool_calls'])
+
+ def test_trace_endpoint_never_contains_credentials_or_query(self):
+  with patch.dict(os.environ,{'SHIELD_MODEL_URL':'https://name:password@example.test/v1/chat/completions?key=secret','SHIELD_MODEL_NAME':'fixture','SHIELD_MODEL_KEY':'hidden-key'}),patch('httpx.post',return_value=httpx.Response(404,json={})):
+   m=ModelAdapter()
+   with self.assertRaises(RuntimeError):m.complete([])
+   self.assertEqual(m.trace[0]['transport']['endpoint'],'https://example.test/v1/chat/completions')
+   self.assertEqual(m.trace[0]['transport']['auth_scheme'],'Bearer');self.assertTrue(m.trace[0]['transport']['auth_present'])
+   self.assertNotIn('hidden-key',json.dumps(m.trace));self.assertNotIn('password',json.dumps(m.trace))
