@@ -281,3 +281,34 @@ and are superseded only for this narrowly identified generated-tool failure.
 `extractors_image.py` reads text from PNG/JPEG/WebP uploads with the Tesseract OCR binary (best effort, **not a security guarantee**: OCR can miss or garble text, so an injected instruction can survive unnoticed). It needs Tesseract on the machine; nothing is bundled and no Python package for it is required (Pillow already comes with Streamlit).
 
 Windows: install Tesseract from the UB Mannheim build at https://github.com/UB-Mannheim/tesseract/wiki, then either add the folder containing `tesseract.exe` to `PATH`, or set the environment variable `SHIELD_TESSERACT_PATH` to the full path of `tesseract.exe`, and restart. If Tesseract cannot be found, image uploads are refused with an explicit "OCR is not installed" message; they are never treated as clean. Limits: 5 MB, 20 megapixels, 20 s per image, English only. Verified so far with synthetic fixtures on Linux; real Windows-machine verification is pending.
+## Local Ollama in the paired app
+
+Run Ollama on the same machine as Streamlit. Use the exact installed model tag:
+
+```dotenv
+SHIELD_PROVIDER=custom
+SHIELD_MODEL_URL=http://localhost:11434/v1/chat/completions
+SHIELD_MODEL_NAME=qwen3:4b
+SHIELD_MODEL_KEY=
+SHIELD_OLLAMA_NO_THINK=1
+```
+
+The custom value bypasses hosted-provider presets. Only loopback hosts
+(localhost, 127.0.0.1, ::1), port 11434 and `/v1/chat/completions` receive the
+Ollama compatibility behavior: tools remain available, but unsupported
+`tool_choice` is omitted. With `SHIELD_OLLAMA_NO_THINK=1`, every scope,
+classifier and planner request sends `reasoning_effort=none`. This is the
+OpenAI-compatible setting, not native `/api/chat`'s `think:false` field.
+Omit the flag to retain the model's normal thinking configuration.
+
+The request trace records the actual reasoning setting. Label new runs with
+model tag and `reasoning_effort=none`; do not pool them with thinking-enabled
+runs. Both lanes use the same adapter configuration. These changes were tested
+with mocked requests, not real local generation. Tool calls, structured JSON,
+latency and memory fit on the laptop remain unverified. Thinking controls are
+model-specific; GPT-OSS cannot fully disable thinking. No baseline-dev bundle,
+sealed protocol or evaluator was changed. The existing 45-second call timeout
+still applies. This block is for the paired app, not the baseline-only CLI.
+
+Sources: https://docs.ollama.com/api/openai-compatibility and
+https://docs.ollama.com/capabilities/thinking .
