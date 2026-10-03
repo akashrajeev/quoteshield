@@ -276,11 +276,12 @@ baseline measurements. Old "no automatic retry" descriptions refer to other erro
 and are superseded only for this narrowly identified generated-tool failure.
 
 
-## Optional: image OCR (not yet wired into the UI)
+## Image OCR in the Judge Challenge upload (unverified on Windows)
 
-`extractors_image.py` reads text from PNG/JPEG/WebP uploads with the Tesseract OCR binary (best effort, **not a security guarantee**: OCR can miss or garble text, so an injected instruction can survive unnoticed). It needs Tesseract on the machine; nothing is bundled and no Python package for it is required (Pillow already comes with Streamlit).
+`extractors_image.py` reads text from PNG/JPEG/WebP uploads with the Tesseract OCR binary (best effort, **not a security guarantee**: OCR can miss or garble text, so an injected instruction can survive unnoticed). The Judge Challenge uploader now accepts .png/.jpg/.jpeg/.webp and passes the extracted text (OCR output plus PNG text chunks and EXIF ImageDescription/UserComment/Artist/Copyright/XPComment) to the content firewall like any other upload. It needs Tesseract on the machine; nothing is bundled and no Python package for it is required (Pillow already comes with Streamlit).
 
-Windows: install Tesseract from the UB Mannheim build at https://github.com/UB-Mannheim/tesseract/wiki, then either add the folder containing `tesseract.exe` to `PATH`, or set the environment variable `SHIELD_TESSERACT_PATH` to the full path of `tesseract.exe`, and restart. If Tesseract cannot be found, image uploads are refused with an explicit "OCR is not installed" message; they are never treated as clean. Limits: 5 MB, 20 megapixels, 20 s per image, English only. Verified so far with synthetic fixtures on Linux; real Windows-machine verification is pending.
+Windows: install Tesseract from the UB Mannheim build at https://github.com/UB-Mannheim/tesseract/wiki, then either add the folder containing `tesseract.exe` to `PATH`, or set the environment variable `SHIELD_TESSERACT_PATH` to the full path of `tesseract.exe`, and restart. If Tesseract cannot be found, image uploads are refused with an explicit "OCR is not installed" message; they are never treated as clean. Limits: 5 MB, 20 megapixels, 20 s per image, English only. Verified so far with mocked Tesseract tests and one real Tesseract 4.1.1 run on Linux with synthetic images. Known limit seen in that run: a 10 px light-grey line was not read at all, while the same line at 14 px was; OCR misses small or low-contrast text, so do not treat an image as clean because nothing was flagged. Real Windows-machine verification is pending, so this is not a shipped-support claim.
+
 ## Local Ollama in the paired app
 
 Run Ollama on the same machine as Streamlit. Use the exact installed model tag:
