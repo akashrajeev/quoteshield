@@ -18,6 +18,7 @@ import os, re, unicodedata
 
 STRIPPED_RULES = ('instruction override', 'authority impersonation')  # checked after negated clauses are removed
 RAW_RULES = ('covert execution request',)  # checked on the full text: "do not tell" is the signal itself
+ENCODED_ONLY_RULES = ('unauthorized disclosure instruction', 'sensitive resource instruction')  # decoded base64/hex/ROT13 views only
 NEGATED = re.compile(r"(?i)\b(?:do not|don.t|never|must not|should not|shouldn.t|cannot|can.t)\b[^.;!?\n]*")
 
 class RequestNeedsConfirmation(ValueError):
@@ -38,8 +39,12 @@ def check(request, classifier=None):
   findings.append({'rule': 'hidden characters', 'encoding': 'raw', 'snippet': 'invisible format characters in the request'})
  for label, value in shield.decode_views(request):
   stripped = NEGATED.sub(' ', value)
+  encoded = any(k in label for k in ('base64', 'hex', 'ROT13'))
   for name, pattern in shield.PATTERNS:
-   if name not in STRIPPED_RULES + RAW_RULES: continue
+   # Inside a base64/hex/ROT13 view the disclosure and sensitive-read rules also apply: a task prompt that
+   # hides an instruction to read a secret or send data out is not a normal task. Raw text keeps the
+   # narrower rule set so that 'email the result to buyer@acme.example' is never flagged.
+   if name not in STRIPPED_RULES + RAW_RULES + (ENCODED_ONLY_RULES if encoded else ()): continue
    m = re.search(pattern, stripped if name in STRIPPED_RULES else value, re.I | re.S)
    if m and name not in [f['rule'] for f in findings]:
     findings.append({'rule': name, 'encoding': label, 'snippet': m[0][:180]})
