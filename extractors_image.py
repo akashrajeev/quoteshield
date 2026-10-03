@@ -2,7 +2,7 @@
 OCR can miss or garble text, so an injection can survive extraction unnoticed. Output is UNTRUSTED text for the firewall.
 Needs the Tesseract binary on PATH or at SHIELD_TESSERACT_PATH. Missing binary, bad images and empty results all fail loudly;
 an image is never accepted as clean when OCR could not run."""
-import io,os,shutil,subprocess,tempfile
+import collections,difflib,io,os,re,shutil,subprocess,tempfile
 
 MAX_BYTES=5*1024*1024;MAX_PIXELS=20_000_000;MAX_TEXT=65536;OCR_TIMEOUT=20
 IMAGE_FORMATS=('png','jpg','jpeg','webp')
@@ -51,6 +51,38 @@ def find_tesseract():
   return configured if os.path.isfile(configured) else None
  return shutil.which('tesseract')
 
+BAND_HEIGHT=90;MIN_SPREAD=3;DEDUPE_RATIO=0.8
+
+def _enhance(img):
+ """Deterministic contrast stretch for faint text. The page is cut into full-width horizontal bands and each band is stretched
+ to the full grey range on its own, so a band whose only content is text a few grey levels off the background becomes
+ readable, while bands that already hold dark text are not harmed (the plain pass still covers them). Bands with almost no
+ spread are left alone. Local, no model."""
+ from PIL import ImageOps
+ g=img.convert('L');out=g.copy()
+ for y in range(0,g.height,BAND_HEIGHT):
+  box=(0,y,g.width,min(g.height,y+BAND_HEIGHT));band=g.crop(box);lo,hi=band.getextrema()
+  if hi-lo>=MIN_SPREAD:out.paste(ImageOps.autocontrast(band),box)
+ return out
+
+def _norm(line):return re.sub(r'\W+',' ',line).strip().lower()
+
+def _extra_lines(first,second):
+ """Lines the enhanced pass found that the plain pass did not. Near-duplicates (same line read slightly differently) are dropped."""
+ seen=[_norm(l) for l in first.splitlines() if _norm(l)];extra=[]
+ for line in second.splitlines():
+  n=_norm(line)
+  if len(n)<4 or any(difflib.SequenceMatcher(None,n,x).ratio()>=DEDUPE_RATIO for x in seen):continue
+  extra.append(line.strip());seen.append(n)
+ return extra
+
+def _ocr(binary,path):
+ try:run=subprocess.run([binary,path,'stdout','-l','eng','--psm','6'],capture_output=True,timeout=OCR_TIMEOUT,text=True,encoding='utf-8',errors='replace')
+ except subprocess.TimeoutExpired:_fail('OCR timed out after %d seconds; image refused.'%OCR_TIMEOUT)
+ except OSError as exc:_fail('OCR could not be started: '+str(exc)[:120])
+ if run.returncode!=0:_fail('OCR failed: '+(run.stderr or '').strip()[:160])
+ return run.stdout
+
 def extract_image(filename,data):
  """Return OCR text plus embedded text metadata for one image. Raises ValueError with a clear message otherwise."""
  name=str(filename or '');ext=name.rsplit('.',1)[-1].lower() if '.' in name else ''
@@ -82,12 +114,13 @@ def extract_image(filename,data):
  if not binary:_fail(INSTALL_NOTE)
  with tempfile.TemporaryDirectory() as tmp:
   path=os.path.join(tmp,'in.png');img.convert('RGB').save(path)
-  try:run=subprocess.run([binary,path,'stdout','-l','eng','--psm','6'],capture_output=True,timeout=OCR_TIMEOUT,text=True,encoding='utf-8',errors='replace')
-  except subprocess.TimeoutExpired:_fail('OCR timed out after %d seconds; image refused.'%OCR_TIMEOUT)
-  except OSError as exc:_fail('OCR could not be started: '+str(exc)[:120])
- if run.returncode!=0:_fail('OCR failed: '+(run.stderr or '').strip()[:160])
- if not run.stdout.strip():_fail('OCR found no text in this image. Not accepted as clean.')
- parts.append('[image OCR, best effort, not a security guarantee]\n'+run.stdout)
+  plain=_ocr(binary,path)
+  enh=os.path.join(tmp,'enh.png');_enhance(img).save(enh)
+  boosted=_ocr(binary,enh)
+ if not plain.strip() and not boosted.strip():_fail('OCR found no text in this image. Not accepted as clean.')
+ parts.append('[image OCR, best effort, not a security guarantee]\n'+plain)
+ extra=_extra_lines(plain,boosted)
+ if extra:parts.append('[image OCR, contrast-enhanced second pass: extra lines the plain pass missed (faint text)]\n'+'\n'.join(extra))
  text='\n'.join(parts)
  if len(text)>MAX_TEXT:_fail('Extracted image text exceeds the 64 KB limit.')
  return text
