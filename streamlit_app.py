@@ -50,7 +50,7 @@ with st.sidebar:
   st.rerun()
 presenter=st.sidebar.toggle('Presenter mode',value=False)
 attack=next(a for a in catalog if a['id']==attack_id)
-tabs=st.tabs(['Judge Challenge','Attack Arena','X-ray','Audit Explorer','Results','Human review']) if not presenter else []
+tabs=st.tabs(['Judge Challenge','Attack Arena','X-ray','Audit Explorer','Results','Human review','Security Trace']) if not presenter else []
 def run(artifact):
  if BLOCKED:
   st.error(BLOCK_REASON);return
@@ -285,3 +285,25 @@ if not presenter:
    if h['outcome']:st.write(h['outcome']);st.json(h['workflow'].sandbox.emails)
   st.caption('Native LangGraph interrupt / Command resume with an in-memory checkpointer. Same stored call, policy rechecked, one use. Session state resets on restart.')
  
+ with tabs[6]:
+  import scenarios,trace_ui,trace
+  st.subheader('Security trace: where each attack was stopped')
+  st.caption('Each scenario is a real run through the real pipeline, shown from its recorded audit. Offline scenarios use a supplied tool call, so they test the boundary, not the model. Only a live run shows what a model proposes.')
+  name=st.selectbox('Scenario',list(scenarios.SCENARIOS),format_func=lambda n:scenarios.SCENARIOS[n]['title'],key='trace_scenario')
+  sc=scenarios.SCENARIOS[name]
+  st.code(sc['request'],language=None)
+  if st.button('Run scenario',key='trace_run'):
+   t,_r=scenarios.run(name);st.session_state['trace_view']=(name,t,None)
+  if 'trace_view' in st.session_state and st.session_state['trace_view'][0]==name:
+   _n,t,_x=st.session_state['trace_view']
+   trace_ui.render(t,mode_note='Label: local classifier + scripted proposals. Offline, supplied action.' if name!='1_user_prompt' else 'Label: request guard on the user task. No agent started.')
+   if t.get('waiting_for_human'):
+    c1,c2=st.columns(2)
+    if c1.button('Approve once',key='trace_ok'):
+     t2,_r=scenarios.run(name,review=True);st.session_state['trace_view']=(name,t2,None);st.rerun()
+    if c2.button('Deny',key='trace_no'):
+     t2,_r=scenarios.run(name,review=False);st.session_state['trace_view']=(name,t2,None);st.rerun()
+    st.caption('Approve once re-runs the scenario with the reviewer saying yes. The guard rechecks the exact call before it is allowed.')
+  if 'pair' in st.session_state:
+   st.markdown('---');st.markdown('**Trace of your last Judge Challenge run (protected lane)**')
+   trace_ui.render(trace.build(st.session_state['pair']['protected']))

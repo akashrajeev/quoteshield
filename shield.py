@@ -42,6 +42,8 @@ class Decision:
 
 POLICY_PATH='vendors/cedar-security-policy.txt'
 KNOWN_RESOURCES=set(QUOTES)|{POLICY_PATH}
+# A confidential file may be read only when the trusted user request names it exactly.
+CONFIDENTIAL_RESOURCES={'confidential/ceiling.txt'}
 
 from api_transport import ModelAdapter,route_summary
 import local_classifier,request_guard
@@ -49,7 +51,7 @@ import local_classifier,request_guard
 def scope_from_request(request: str, model: ModelAdapter | None=None) -> Scope:
  """Only authenticated request enters this function. LLM cannot widen capabilities."""
  paths=re.findall(r'(?<![\w/])(?:quotes|confidential|vendors)/[A-Za-z0-9_-]+\.(?:txt|md|html|csv|pdf)(?![\w/-])',request)
- allowed=[p for p in paths if p in KNOWN_RESOURCES]
+ allowed=[p for p in paths if p in KNOWN_RESOURCES or p in CONFIDENTIAL_RESOURCES]
  result=Scope(resources=list(dict.fromkeys(allowed)),confidential=[p for p in paths if p.startswith('confidential/')])
  # Every proposed write or communication is held for exact-call review unless
  # task explicitly names a recipient and tool. The parser never infers an address.

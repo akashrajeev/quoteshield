@@ -85,7 +85,6 @@ def build(result):
   st = _stage_of(e)
   if st: per[st].append(e)
  stages = []
- stop = None
  for key, label in STAGES:
   ev = per[key]
   entry = {'stage': key, 'label': label, 'status': None, 'rule': None, 'explanation': '', 'events': [e['sequence'] for e in ev]}
@@ -122,7 +121,32 @@ def build(result):
     entry.update(status=status, rule=pick.get('rule'), explanation=explain(pick))
     if len(ev) > 1: entry['explanation'] += ' (%d events at this stage.)' % len(ev)
   stages.append(entry)
-  if stop is None and entry['status'] in ('BLOCK', 'QUARANTINED', 'CLEANED', 'DENIED') :
-   stop = {'stage': key, 'label': label, 'rule': entry['rule'], 'position': ORDER.index(key) + 1, 'of': len(ORDER)}
+ interventions = [{'stage': s['stage'], 'label': s['label'], 'status': s['status'], 'rule': s['rule'], 'position': ORDER.index(s['stage']) + 1}
+                  for s in stages if s['status'] in ('BLOCK', 'QUARANTINED', 'CLEANED', 'DENIED', 'ASK HUMAN')]
+ # blocked_at: where the consequential action was stopped (a blocked/denied call).
+ # If no call was stopped, it is the first place content was cleaned or quarantined.
+ final = [i for i in interventions if i['status'] in ('BLOCK', 'DENIED')]
+ early = [i for i in interventions if i['status'] in ('QUARANTINED', 'CLEANED')]
+ pick = final[-1] if final else (early[0] if early else None)
+ blocked_at = None if pick is None else {**pick, 'of': len(ORDER)}
  effect = stages[ORDER.index('effect')]['status'] == 'EXECUTED'
- return {'run_id': result.get('run_id'), 'mode': result.get('mode'), 'defence': result.get('defence'), 'stages': stages, 'stopped_at': stop, 'effect_executed': effect, 'attack_success': result.get('attack_success'), 'stages_with_events': sum(1 for s in stages if s['events'])}
+ pending = bool(result.get('pending'))
+ return {'run_id': result.get('run_id'), 'mode': result.get('mode'), 'defence': result.get('defence'), 'stages': stages,
+         'blocked_at': blocked_at, 'interventions': interventions, 'effect_executed': effect, 'waiting_for_human': pending,
+         'attack_success': result.get('attack_success'), 'stages_with_events': sum(1 for s in stages if s['events'])}
+
+def from_request_block(check, defence=None):
+ """Trace for a run that never started because the request guard asked for confirmation."""
+ stages = []
+ for key, label in STAGES:
+  e = {'stage': key, 'label': label, 'status': 'NOT_REACHED', 'rule': None, 'events': [], 'explanation': 'The run stopped before this stage. Nothing was read or run.'}
+  if key == 'prompt_guard':
+   rules = sorted({f['rule'] for f in check['findings']})
+   if not rules: raise ValueError('from_request_block needs a flagged request')
+   e.update(status='BLOCK', rule=rules[0] if rules else None, explanation='Your task was flagged before anything ran (%s). It needs your confirmation. No file was opened and the agent never started.' % ', '.join(rules))
+  stages.append(e)
+ pos = 1
+ return {'run_id': None, 'mode': None, 'defence': defence, 'stages': stages,
+         'blocked_at': {'stage': 'prompt_guard', 'label': LABEL['prompt_guard'], 'status': 'BLOCK', 'rule': stages[0]['rule'], 'position': pos, 'of': len(ORDER)},
+         'interventions': [], 'effect_executed': False, 'waiting_for_human': False, 'attack_success': False, 'stages_with_events': 0,
+         'findings': check['findings']}
