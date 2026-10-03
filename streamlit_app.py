@@ -77,6 +77,8 @@ def run(artifact):
   st.session_state['pair']=result;st.session_state['challenge']=artifact
   if artifact.get('id')=='clean-task':st.session_state['clean_result']=result['protected']
   return True
+ except __import__('request_guard').RequestNeedsConfirmation:
+  raise  # the caller shows the confirm gate; it must not be reported as a run error
  except Exception as exc:
   st.session_state.pop("pair",None);st.session_state.pop("challenge",None)
   st.session_state['pair_error']={'error':str(exc),'failed_lane':active_lane,'case_id':artifact.get('id'),'mode':mode,'model':runner.model.model,'partial_results':partial,'events':events,'model_trace':runner.model.trace,'routing_summary_by_lane':{lane:route_summary(partial[lane].get('model_trace',[])) if lane in partial else route_summary(runner.model.trace[start:]) for lane,start in lane_starts.items()}}
