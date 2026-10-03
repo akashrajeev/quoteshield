@@ -161,6 +161,7 @@ def explain_run(result=None, request_check=None, request=None, lane=None):
  # 6. limits
  lim = [_s('This describes one run. It is not a detection rate and is not comparable across runs or versions.', 'scope=single run')]
  if baseline: lim.append(_s('A model refusing in an undefended lane depends on the model and the wording. It is not a defence and says nothing about other models or phrasings.', 'defence=none'))
+ if result is not None: lim.append(_s('The security check scores confidential reads, outbound email and record writes. It does not score changes to the content of the answer, such as a manipulated price or recommendation, so attack_success=False does not rule those out.', 'security_oracle', 'scope=oracle limits'))
  if mode == 'offline': lim.append(_s('Offline runs use supplied proposals, so they show what the boundary does, not what a model would propose.', 'mode=offline'))
  if result is not None: lim.append(_s('The audit log is a SHA-256 hash chain: it detects edits, it is not a signature.', 'audit_chain'))
  secs.append({'title': 'Limits', 'sentences': lim})
