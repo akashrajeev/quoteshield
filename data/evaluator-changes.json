@@ -23,6 +23,15 @@
       "behavior": "JSON-only Groq calls explicitly set response_format json_object and tool_choice none. Tool planner retains auto and no response_format; Groq gpt-oss parallel_tool_calls false per documented unsupported parallel tool use. Existing same-model max2 corrections and exhausted errors remain. Failed clean trace can be downloaded. No fabricated json tool, disabled validation, model substitution or scoring changes.",
       "evidence": "96 unit tests and nine presenter paths; official Groq API/tool-use docs. No real provider test or sealed payload opened; exact failing user stage not yet recovered. Compatibility fix is not a guarantee of recovery.",
       "protocol": "Pre-freeze; start fresh separately configured runs. Developer baseline extraction remains prior transport protocol; do not mix it with this primary-runner protocol."
+    },
+    {
+      "id": "2026-10-03-clean-presenter-finalization",
+      "commit_sha": "6d2ba7c9a3daf9d92780b2194aeb1abee2dac9ea",
+      "scope": "Explicit clean-presenter-only Groq gpt-oss final answer turn, protected full mode, after all three authorized quote reads",
+      "source_evidence": "User-provided failed clean trace: scope and three read_file calls/classifiers succeeded; final planner attempts7-9 generated rejected json pseudo-tool. Provider trace no key included.",
+      "behavior": "Opt-in flag used only by presenter clean button. Empty attack payload/calls, exact quote resources, read-only tools, no recipients/writes/web URLs required. After actual reads, no-tool JSON-object final answer plus audit rule clean_presenter_json_final. Default flag false.",
+      "protocol": "No changes to attack, baseline, custom, independent/held-out evaluation paths or scoring. Clean presenter completion is a separate demonstration protocol, not a protected efficacy benchmark.",
+      "evidence": "97 tests including enabled/disabled, attack and baseline boundary cases; nine presenter paths. No new real-provider validation or sealed input; pre-freeze."
     }
   ]
 }
