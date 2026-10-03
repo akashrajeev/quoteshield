@@ -5,7 +5,7 @@ from dataclasses import asdict
 import streamlit as st
 from shield import Runner,paired,ModelAdapter,firewall,Scope,Sandbox,Guard,ToolCall,QUOTES
 from security import AuditLog
-from formats import UPLOAD_FORMATS,UPLOAD_REFUSED_FORMATS,judge_artifact
+from formats import UPLOAD_FORMATS,IMAGE_UPLOAD_FORMATS,judge_artifact
 from api_transport import route_summary
 from approval import ApprovalWorkflow
 from ui_mode import resolve_mode,status_label
@@ -200,7 +200,7 @@ if not presenter:
   st.subheader('Try your own untrusted content')
   task=st.text_area('Trusted task prompt (optional; empty keeps the default quote comparison)',height=80,max_chars=8192)
   payload=st.text_area('Text inserted into a mock vendor quote',height=150,max_chars=8192)
-  upload=st.file_uploader('Or upload a file as the untrusted content (.txt, .md, .html, .csv, .pdf, .docx; plain-text extraction only; images are refused, OCR is not supported yet)',type=list(UPLOAD_FORMATS+UPLOAD_REFUSED_FORMATS))
+  upload=st.file_uploader('Or upload a file as the untrusted content (.txt, .md, .html, .csv, .pdf, .docx; plain-text extraction; .png/.jpg/.jpeg/.webp are read with local Tesseract OCR plus metadata, best effort, and refused if Tesseract is not installed)',type=list(UPLOAD_FORMATS+IMAGE_UPLOAD_FORMATS))
   if mode=='llm':
    st.caption('Runs through the live model: it decides what tool calls to propose, and the firewall and guard act on those. Developer verification (sidebar) only scans text; it cannot infer a new attacker plan.')
   else:
