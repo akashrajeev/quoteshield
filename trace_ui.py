@@ -56,7 +56,11 @@ def comparison_rows(items):
 def depth_bars(items):
  """Plain text bar per run: how far the run got before it was stopped. Descriptive, not a rate."""
  out = []
+ width = max([len(title) for title, _t in items] or [0])
  for title, t in items:
-  b = t['blocked_at']; n = b['position'] if b else len(trace.ORDER)
-  out.append('%-62s %s%s  %s' % (title[:62], '#' * n, '.' * (len(trace.ORDER) - n), ('stopped at ' + b['label']) if b else 'not stopped'))
+  b = t['blocked_at']
+  if b: n = b['position']; label = 'stopped at ' + b['label']
+  elif t.get('waiting_for_human'): n = trace.ORDER.index('human') + 1; label = 'waiting for a person'
+  else: n = len(trace.ORDER); label = 'not stopped'
+  out.append('%-*s  %s%s  %s' % (width, title, '#' * n, '.' * (len(trace.ORDER) - n), label))
  return '\n'.join(out)
