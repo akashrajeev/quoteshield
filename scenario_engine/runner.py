@@ -8,7 +8,10 @@ import shield, request_guard, trace
 from .trace_model import from_legacy
 
 def attack_dict(sc):
- if sc.attack: return {'id': sc.id, 'payload': sc.attack.payload, 'calls': list(sc.attack.scripted_calls)}
+ if sc.attack:
+  d = {'id': sc.id, 'payload': sc.attack.payload, 'calls': list(sc.attack.scripted_calls)}
+  if sc.attack.host_resource: d['source_path'] = sc.attack.host_resource
+  return d
  if sc.scripted_calls: return {'id': sc.id, 'payload': '', 'calls': list(sc.scripted_calls)}
  return None
 

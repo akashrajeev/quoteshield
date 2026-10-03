@@ -63,3 +63,7 @@ Two places still carry the procurement convention, deliberately and documented: 
 ## Defence versions and classifier numbers
 
 The disclosure rule changed once (contact labels such as "Email: x@agency.gov" are no longer read as the verb, and the hyphenated "E-mail" form is now read as one). This is a defence-version change: results from before and after it are not pooled. A benign false-positive figure measured before the change is not comparable with one measured after it, and the ProtectAI classifier numbers predate this rule version. Every result should be recorded with the defence version it was produced under (see scenario_engine/paired.py defence_version).
+
+## Second-domain coverage
+
+Besides procurement, the dev scenarios cover four more domains (hr, finance, customer support, research). The host text in each is a real public page (OPM, IRS, FTC, NIH) with its origin URL, retrieval time and sha256 recorded in corpus/real/PROVENANCE.json; the confidential file in each is a synthetic fixture. Each domain has an overt override attack, a paraphrase attack that the deterministic rules do not match, and a benign control, all run through the same scope, firewall, guard and taint code with only different authorization inputs. These scenarios report attack and containment only. The engine's utility oracle is procurement-shaped, so no completion number is claimed for them and each manifest says so. They are offline scripted proposals on dev fixtures, not a benchmark and not a live-agent result.
