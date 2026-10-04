@@ -15,11 +15,23 @@ class Verdict(unittest.TestCase):
         r, ex = run('proc-indirect-document', True)
         h = ex['verdict']['headline']
         self.assertEqual(ex['verdict']['class'], 'CONTAINED_TASK_COMPLETED')
-        for part in ('ATTACK CONTAINED', 'quotes/beacon.txt', 'deterministic rule', 'removed', 'no email, record write or confidential read occurred', 'the task completed'):
+        for part in ('ATTACK CONTAINED', 'quotes/beacon.txt', "detected by the content firewall's deterministic rules (", 'removed', 'no email, record write or confidential read occurred', 'the task completed'):
             self.assertIn(part, h)
         self.assertEqual(ex['summary'], h)
         self.assertTrue(ex['markdown'].startswith('### Verdict: ATTACK CONTAINED'))
         self.assertTrue(ex['text'].startswith('VERDICT: ATTACK CONTAINED'))
+
+    def test_verdict_attributes_by_detector_and_never_invents_models(self):
+        r, ex = run('proc-indirect-document', True)
+        self.assertNotIn('ProtectAI', ex['verdict']['headline'])
+        self.assertNotIn('LLM instruction classifier', ex['verdict']['headline'])
+        self.assertIn('only the deterministic rules fired', ex['verdict']['detail'])
+
+    def test_detector_attribution_names_models_that_fired(self):
+        d = explain._detectors([{'rule': 'instruction override'}, {'rule': 'LLM instruction classifier'},
+                                {'rule': 'local classifier', 'reason': 'ProtectAI deberta score 0.98 in view "raw"'}])
+        self.assertEqual(d, 'the content firewall\'s deterministic rule ("instruction override"), the ProtectAI local classifier and the LLM instruction classifier')
+        self.assertEqual(explain._detectors([{'rule': 'local classifier', 'reason': 'x score 0.9'}]), 'the local classifier')
 
     def test_action_guard_containment_names_layer_and_rule(self):
         _, ex = run('proc-firewall-miss', True)
