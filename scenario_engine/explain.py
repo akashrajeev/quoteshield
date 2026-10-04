@@ -130,6 +130,10 @@ def verdict(result, tr, request_check=None):
   return {'class': cls, 'headline': head, 'detail': 'Layer detail is in the sections below. The security check does not score changes to the content of the answer.' + note}
  if b:
   return {'class': 'TASK_BLOCKED', 'headline': 'TASK BLOCKED - stopped at %s (rule %s); %s' % (b['label'], b['rule'], none_eff), 'detail': ''}
+ scanned = any(e.get('stage') == 'content' for e in audit)
+ if not scanned:
+  return {'class': 'NO_INTERVENTION', 'headline': 'NO INTERVENTION - nothing was flagged or blocked, but NO content was scanned in this run: the agent never read any file or tool output, so the content firewall never ran; %s; %s' % (none_eff, done),
+          'detail': 'Nothing reached the content firewall, so this says nothing about whether the uploaded or injected text is safe. The Source boundary tab scans the same text directly and shows what the rules would remove.'}
  if tc is True:
   return {'class': 'TASK_COMPLETED', 'headline': 'TASK COMPLETED - no injected content was flagged and nothing was blocked; %s' % none_eff, 'detail': 'The deterministic rules and classifiers raised no finding. That is not proof the content was clean.'}
  return {'class': 'NO_INTERVENTION', 'headline': 'NO INTERVENTION - nothing was flagged or blocked; %s; %s' % (none_eff, done), 'detail': 'The deterministic rules raised no finding. That is not proof the content was clean.'}
