@@ -110,6 +110,22 @@ def show_explanations(result):
    with st.expander('What happened, %s lane: %s'%(_lane,_ex['summary']),expanded=(_lane=='protected')):
     st.markdown(_ex['markdown']);st.caption('Generated from the records of this run (no model). Also in the downloaded JSON as "explanation".')
 
+def show_answers(result,title='What the agent answered'):
+ import run_summary as _rs
+ st.markdown('**'+title+'**')
+ cols=st.columns(2,gap='large')
+ for col,key,name in zip(cols,['baseline','protected'],['Unprotected lane','Full shield lane']):
+  v=_rs.answer_view(result[key])
+  with col:
+   st.markdown('**'+name+'**'+(' | model '+str(v['model']) if v['model'] else ' | offline scripted proposals'))
+   if v['parsed'] and v['parsed'].get('vendors'):
+    st.write(v['parsed'].get('summary','Structured vendor comparison'));st.dataframe(v['parsed']['vendors'],hide_index=True,width='stretch')
+    if v['parsed'].get('recommended_vendor'):st.write('Recommended: '+str(v['parsed']['recommended_vendor']))
+   elif v['answer']:st.text(v['answer'])
+   else:st.caption('The agent returned no answer text in this run.')
+   if v['calls']:st.caption('Tool calls: '+'; '.join('%s (%s)'%(c['call'],c['decision']) for c in v['calls']))
+   else:st.caption('Tool calls: none proposed.')
+
 def show_pair(result):
  st.caption(result['label']+' | No timed animations, model outcomes inferred from actual mock state.')
  show_explanations(result)
@@ -244,7 +260,7 @@ if not presenter:
    if st.button('Confirm and run this task'):
     st.session_state.pop('needs_confirm');run({**pending['artifact'],'request_confirmed':True})
   if 'pair' in st.session_state and (st.session_state.get('challenge') or {}).get('id')=='judge-custom' and 'needs_confirm' not in st.session_state:
-   show_explanations(st.session_state['pair'])
+   show_answers(st.session_state['pair']);show_explanations(st.session_state['pair'])
  with tabs[2]:
   st.subheader('Read the source boundary')
   active=st.session_state.get('challenge',attack)
@@ -275,6 +291,7 @@ if not presenter:
   else:st.info('Execute a run first.')
  with tabs[4]:
   st.subheader('Measured evidence, not placeholder scores')
+  if 'pair' in st.session_state:show_answers(st.session_state['pair'],'Latest run: what the agent answered');st.divider()
   reports=[p for p in (ROOT/'artifacts').glob('*.json') if isinstance(json.loads(p.read_text()).get('metrics'),(dict,list))]
   if reports:
    chosen=st.selectbox('Report',[p.name for p in reports]);report=json.loads((ROOT/'artifacts'/chosen).read_text())
