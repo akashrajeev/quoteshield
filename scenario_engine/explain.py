@@ -57,7 +57,7 @@ def _detectors(findings):
  findings = [f for f in findings if f.get('rule')]
  rules = sorted({f['rule'] for f in findings if f['rule'] not in _MODEL_RULES and f['rule'] != 'local classifier'})
  out = []
- if rules: out.append("the content firewall's deterministic rule%s %s" % ('s' if len(rules) > 1 else '', _listjoin(['"%s"' % r for r in rules])))
+ if rules: out.append("the content firewall's deterministic rule%s (%s)" % ('s' if len(rules) > 1 else '', ', '.join('"%s"' % r for r in rules)))
  if any(f['rule'] == 'local classifier' for f in findings): out.append('the ' + _local_name(findings))
  if any(f['rule'] in _MODEL_RULES for f in findings): out.append('the LLM instruction classifier')
  return _listjoin(out) if out else 'the content firewall'
