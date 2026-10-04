@@ -25,3 +25,5 @@ results-*/
 quoteshield-baseline-dev-rev*/
 .env
 .venv/
+quoteshield-blind-eval-bundle/
+eval_out/
