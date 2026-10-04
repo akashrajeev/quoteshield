@@ -32,7 +32,7 @@ class Schema(unittest.TestCase):
 
 class Loader(unittest.TestCase):
  def test_all_procurement_manifests_load_and_have_benign_control(self):
-  sc = loader.load_dir(MAN); self.assertEqual(len(sc), 10)
+  sc = loader.load_dir(MAN); self.assertEqual(len(sc), 19)
   self.assertTrue(loader.require_benign_control(sc))
   self.assertEqual({s.injection_type for s in sc if s.attack}, {'DIRECT', 'INDIRECT'})
  def test_missing_benign_control_detected(self):

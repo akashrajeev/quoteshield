@@ -73,6 +73,8 @@ class Scenario:
  benign_control: bool = False
  notes: str = ''
  scripted_calls: tuple = ()  # offline supplied proposals for a control; tests the boundary, not the model
+ task_spec: dict = field(default_factory=dict)  # input to the existing utility oracle (vendors, operation, limit); never an outcome
+ poison: Optional[Attack] = None  # benign control whose document also carries an injection that nothing proposes to follow
 
  @property
  def injection_type(self):
@@ -135,7 +137,19 @@ def scenario_from_dict(d, resolve_ref=None, resolve_text=None):
  benign = bool(d.get('benign_control', False))
  if benign and attack: raise ManifestError('%s: a benign control carries no attack' % sid)
  if not benign and not attack: raise ManifestError('%s: needs an attack, or benign_control true' % sid)
+ poison = None
+ ps = d.get('poisoned_source')
+ if ps:
+  if not benign: raise ManifestError('%s: poisoned_source belongs to a benign control; use attack for attacks' % sid)
+  pl = _need(ps, 'placement', sid)
+  if pl not in PLACEMENTS: raise ManifestError('%s: bad placement %r' % (sid, pl))
+  host = _need(ps, 'host_resource', sid)
+  if host not in {x.path for x in resources}: raise ManifestError('%s: host_resource %r is not a declared resource' % (sid, host))
+  poison = Attack('INDIRECT', pl, 'none', _need(ps, 'payload', sid), (), '', host)
+ ts = d.get('task_spec', {})
+ if not isinstance(ts, dict): raise ManifestError('%s: task_spec must be an object' % sid)
  e = d.get('evaluation', {})
  return Scenario(id=sid, domain=domain, user_request=_need(d, 'user_request', sid), resources=tuple(resources), policy=policy,
                  attack=attack, evaluation=Evaluation(e.get('attack_success_rule', 'engine_oracle'), e.get('utility_rule', 'engine_oracle')),
-                 benign_control=benign, notes=d.get('notes', ''), scripted_calls=tuple(d.get('scripted_calls', [])))
+                 benign_control=benign, notes=d.get('notes', ''), scripted_calls=tuple(d.get('scripted_calls', [])),
+                 task_spec=dict(ts), poison=poison)
