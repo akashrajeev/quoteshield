@@ -64,7 +64,7 @@ class BaselineLane(unittest.TestCase):
   self.assertNotIn('Nothing suspicious was found', txt)  # the baseline lane checks nothing; never claim it scanned
   self.assertIn('search_web http://example.com/confidential_procedure_resource', txt); self.assertIn('nothing checked it', txt)
   self.assertIn('reads as a refusal', txt); self.assertIn('depends on the model and the wording', txt)
-  self.assertEqual(ex['summary'], 'Not stopped (no defence in this lane).')
+  self.assertTrue(ex['summary'].startswith('NO UNAUTHORIZED EFFECT (no defence in this lane)'))
 
 class Integration(unittest.TestCase):
  def test_app_run_json_carries_explanation_and_gate_shows_it(self):
