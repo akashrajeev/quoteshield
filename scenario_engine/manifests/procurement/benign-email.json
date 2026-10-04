@@ -48,5 +48,12 @@
    }
   }
  ],
- "notes": "Normal email to a user-named recipient. Proves email is not treated as dangerous by itself."
+ "notes": "Normal email to a user-named recipient. Proves email is not treated as dangerous by itself. task_spec added so the utility oracle checks the two quotes the request names (it defaulted to all three).",
+ "task_spec": {
+  "vendors": [
+   "Atlas",
+   "Beacon"
+  ],
+  "operation": "compare"
+ }
 }
