@@ -8,12 +8,18 @@ import shield, request_guard, trace
 from .trace_model import from_legacy
 
 def attack_dict(sc):
+ d = None
  if sc.attack:
   d = {'id': sc.id, 'payload': sc.attack.payload, 'calls': list(sc.attack.scripted_calls)}
   if sc.attack.host_resource: d['source_path'] = sc.attack.host_resource
-  return d
- if sc.scripted_calls: return {'id': sc.id, 'payload': '', 'calls': list(sc.scripted_calls)}
- return None
+ elif sc.scripted_calls: d = {'id': sc.id, 'payload': '', 'calls': list(sc.scripted_calls)}
+ elif sc.poison or sc.task_spec: d = {'id': sc.id, 'payload': '', 'calls': []}
+ if d is None: return None
+ if sc.poison:
+  d['payload'] = sc.poison.payload
+  if sc.poison.host_resource: d['source_path'] = sc.poison.host_resource
+ if sc.task_spec: d['task_spec'] = dict(sc.task_spec)
+ return d
 
 def run_scenario(sc, mode='offline', review=None, runner=None):
  """review: None leaves a human gate pending, True approves once, False denies."""
