@@ -25,6 +25,7 @@ STAGES = [
 ORDER = [s for s, _ in STAGES]
 LABEL = dict(STAGES)
 READ_TOOLS = ('read_file', 'search_web')
+import re
 STOPPING = ('BLOCK', 'QUARANTINE', 'SANITIZE', 'DENIED')
 
 def _call(e):
@@ -48,6 +49,39 @@ def _stage_of(e):
   if e.get('decision') == 'ASK HUMAN': return 'human'
   if _call(e)[0] in READ_TOOLS and e.get('decision') == 'ALLOW': return 'retrieval'
   return 'action_guard'
+ return None
+
+_SCORE = re.compile(r'score\s+([0-9]*\.?[0-9]+)')
+_LLM = 'LLM instruction classifier'
+
+def _detector(f):
+ """Which kind of detector produced a finding, and what it can show. Rules show the pattern name and matched text.
+ The LLM classifier returns a verdict, a reason and a snippet (no numeric score). The local model returns a score."""
+ rule = f.get('rule', '')
+ reason = str(f.get('reason') or '')
+ if rule == _LLM:
+  kind, note = 'LLM instruction classifier', 'verdict + rationale + quoted snippet; this classifier returns no numeric score'
+ elif rule == 'local classifier':
+  kind, note = 'local classifier (model)', 'injection probability from the model; flagged at or above the threshold'
+ else:
+  kind, note = 'deterministic rule', 'a named pattern matched the text shown (after decoding, in the stated view)'
+ m = _SCORE.search(reason)
+ return {'detector': kind, 'rule': rule, 'view': f.get('encoding') or '', 'matched': str(f.get('snippet') or ''),
+         'rationale': reason, 'score': float(m.group(1)) if m else None, 'what_it_shows': note}
+
+def _evidence(e):
+ """Evidence recorded for one audit entry that intervened, straight from its stored fields. Nothing is inferred."""
+ s, d = e.get('stage'), e.get('decision')
+ if s in ('content', 'request'):
+  fnd = e.get('findings') or []
+  if d in ('PASS', 'ALLOW') and not fnd: return None
+  return {'sequence': e.get('sequence'), 'kind': s, 'source': e.get('source') or ('your task' if s == 'request' else None), 'decision': d,
+          'detectors': [_detector(f) for f in fnd],
+          'removed_lines': [{'line': r.get('line'), 'text': str(r.get('text', ''))[:240]} for r in (e.get('removed_spans') or [])],
+          'whole_document_held_back': d == 'QUARANTINE'}
+ if s == 'action' and d in ('BLOCK', 'DENIED', 'ASK HUMAN'):
+  return {'sequence': e.get('sequence'), 'kind': 'action', 'source': None, 'decision': d, 'call': _describe_call(e), 'rule': e.get('rule'),
+          'why': e.get('reason'), 'detectors': [], 'removed_lines': [], 'whole_document_held_back': False}
  return None
 
 def explain(e):
@@ -87,7 +121,8 @@ def build(result):
  stages = []
  for key, label in STAGES:
   ev = per[key]
-  entry = {'stage': key, 'label': label, 'status': None, 'rule': None, 'explanation': '', 'events': [e['sequence'] for e in ev]}
+  entry = {'stage': key, 'label': label, 'status': None, 'rule': None, 'explanation': '', 'events': [e['sequence'] for e in ev],
+           'evidence': [x for x in (_evidence(e) for e in ev) if x]}
   if key == 'audit':
    ok = bool(result.get('audit_chain_verified'))
    entry.update(status='PASS' if ok else 'FAIL', rule='sha256_chain', explanation='The log of this run is a hash chain (%d entries) and it %s. This detects edits; it is not a signature.' % (len(audit), 'verifies' if ok else 'does NOT verify'))
@@ -139,10 +174,11 @@ def from_request_block(check, defence=None):
  """Trace for a run that never started because the request guard asked for confirmation."""
  stages = []
  for key, label in STAGES:
-  e = {'stage': key, 'label': label, 'status': 'NOT_REACHED', 'rule': None, 'events': [], 'explanation': 'The run stopped before this stage. Nothing was read or run.'}
+  e = {'stage': key, 'label': label, 'status': 'NOT_REACHED', 'rule': None, 'events': [], 'evidence': [], 'explanation': 'The run stopped before this stage. Nothing was read or run.'}
   if key == 'prompt_guard':
    rules = sorted({f['rule'] for f in check['findings']})
    if not rules: raise ValueError('from_request_block needs a flagged request')
+   e['evidence'] = [{'sequence': None, 'kind': 'request', 'source': 'your task', 'decision': 'BLOCK', 'detectors': [_detector(f) for f in check['findings']], 'removed_lines': [], 'whole_document_held_back': False}]
    e.update(status='BLOCK', rule=rules[0] if rules else None, explanation='Your task was flagged before anything ran (%s). It needs your confirmation. No file was opened and the agent never started.' % ', '.join(rules))
   stages.append(e)
  pos = 1
