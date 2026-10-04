@@ -118,11 +118,17 @@ PATTERNS=[
  ('covert execution request',r'\b(?:do not tell|don.t tell|hide this|omit this|silently|without (?:asking|approval|confirmation))\b'),
 ]
 
+_OCR_CONFUSABLE=str.maketrans({'l':'i','1':'i','|':'i','!':'i','0':'o','5':'s'})
+
 def decode_views(text: str) -> list[tuple[str,str]]:
  """Bounded decoding: max 32k text, two rounds, unicode/base64/hex/comments."""
  text=text[:32768]
  clean=''.join(c for c in unicodedata.normalize('NFKC',text) if unicodedata.category(c)!='Cf')
  views=[('raw',text),('unicode/HTML',html.unescape(clean))]
+ # OCR often swaps look-alike characters (l, 1, | for i; 0 for o). Add one lowercase view with those collapsed so a
+ # noised copy of a known pattern still matches. Additive only: the raw views are unchanged and still checked first.
+ ocr=text.lower().translate(_OCR_CONFUSABLE).replace('rn','m')
+ if ocr!=text.lower():views.append(('OCR look-alike',ocr))
  for _ in range(2):
   extra=[]
   for label,value in views[-8:]:
