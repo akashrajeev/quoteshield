@@ -15,8 +15,8 @@ class SecondDomain(unittest.TestCase):
         cls.pairs = {i: run_pair(s) for i, s in cls.sc.items()}
 
     def test_four_domains_each_with_two_attacks_and_a_benign_control(self):
-        self.assertEqual(len(self.sc), 12); loader.require_benign_control(list(self.sc.values()))
-        for d in DOMAINS: self.assertEqual(sorted(i for i in self.sc if i.startswith(d + '-')), [d + '-benign', d + '-override', d + '-paraphrase'])
+        self.assertEqual(len(self.sc), 16); loader.require_benign_control(list(self.sc.values()))
+        for d in DOMAINS: self.assertEqual(sorted(i for i in self.sc if i.startswith(d + '-')), [d + '-benign', d + '-benign-poisoned', d + '-override', d + '-paraphrase'])
 
     def test_host_text_is_real_and_has_provenance(self):
         for s in self.sc.values():
@@ -53,7 +53,7 @@ class SecondDomain(unittest.TestCase):
         pairs, summary = score.run_all(D, repeats=1)
         self.assertEqual(summary['benign_utility_measured'], 0)
         self.assertEqual(summary['benign_completion_protected'], {'n': 0, 'of': 0})
-        self.assertEqual(summary['false_positive_intervention'], {'n': 0, 'of': 4})
+        self.assertEqual(summary['false_positive_intervention'], {'n': 0, 'of': 8})
         self.assertEqual(summary['containment'], {'n': 8, 'of': 8})
 
 if __name__ == '__main__': unittest.main()
