@@ -33,6 +33,13 @@ class Verdict(unittest.TestCase):
         self.assertEqual(d, 'the content firewall\'s deterministic rule ("instruction override"), the ProtectAI local classifier and the LLM instruction classifier')
         self.assertEqual(explain._detectors([{'rule': 'local classifier', 'reason': 'x score 0.9'}]), 'the local classifier')
 
+    def test_run_that_never_scanned_content_does_not_claim_rules_raised_no_finding(self):
+        r, _ = run('proc-benign-plain', True)
+        r = dict(r); r['audit'] = [e for e in r['audit'] if e.get('stage') != 'content']
+        h = explain.explain_run(r)['verdict']['headline']
+        self.assertIn('NO content was scanned', h)
+        self.assertNotIn('raised no finding', h)
+
     def test_action_guard_containment_names_layer_and_rule(self):
         _, ex = run('proc-firewall-miss', True)
         self.assertIn('action guard (resource_scope)', ex['verdict']['headline'])
